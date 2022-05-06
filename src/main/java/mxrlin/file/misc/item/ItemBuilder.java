@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022 Mxrlin
+ * See LICENSE
+ */
+
 package mxrlin.file.misc.item;
 
 import org.bukkit.Material;

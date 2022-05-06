@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022 Mxrlin
+ * See LICENSE
+ */
+
 package mxrlin.file.search;
 
 import com.google.common.collect.Maps;

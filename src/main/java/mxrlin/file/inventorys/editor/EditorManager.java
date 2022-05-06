@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022 Mxrlin
+ * See LICENSE
+ */
+
 package mxrlin.file.inventorys.editor;
 
 import mxrlin.file.inventorys.editor.file.FileEditor;
