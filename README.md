@@ -13,6 +13,10 @@ File Manager is a Spigot plugin, made for server owners, to not have the need to
 * [AnvilGUI](https://github.com/WesJD/AnvilGUI "Click to go to AnvilGUI!")
 * [ASM](https://asm.ow2.io "Click to go to ASM!")
 
+## API
+To use the included API of FileManager, first implement the plugin.
+After that go ahead and use `FileManager#INSTANCE` to use all methods of the API that are included right now.
+
 ## License
 This Repository uses a **MIT License**.
 
