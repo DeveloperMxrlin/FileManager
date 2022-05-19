@@ -72,7 +72,7 @@ public class DirectoryInventory {
                                         String fileName = itemStack.getItemMeta().getDisplayName().replace("§7", "");
                                         File clickedFile = new File(directory, fileName);
                                         if(!clickedFile.exists()) {
-                                            System.err.println("The Clicked File doesn't exist!");
+                                            player.sendMessage("§cThe clicked file seems to be deleted! Try to update the inventory.");
                                             return;
                                         }
 
