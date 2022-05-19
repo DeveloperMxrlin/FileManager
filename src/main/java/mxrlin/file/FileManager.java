@@ -11,13 +11,19 @@ import mxrlin.file.listener.PlayerDataListener;
 import mxrlin.file.misc.Metrics;
 import mxrlin.file.misc.data.PlayerData;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 
 public class FileManager extends JavaPlugin {
+
+    // TODO: 19.05.2022 add more editor: json,
 
     /**
      * Plugin Idea:
@@ -27,7 +33,7 @@ public class FileManager extends JavaPlugin {
     private static FileManager instance;
 
     private InventoryManager manager;
-    private final boolean debug = true;
+    private boolean debug;
 
     private List<String> implementationErrorMessages;
 
@@ -42,6 +48,8 @@ public class FileManager extends JavaPlugin {
 
         data = new HashMap<>();
 
+        loadConfig();
+
         manager = new InventoryManager(this);
         manager.init();
 
@@ -54,6 +62,44 @@ public class FileManager extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new PlayerDataListener(), this);
 
         getCommand("filemanager").setExecutor(new FileManagerCommand());
+
+    }
+
+    private void loadConfig(){
+
+        if(!getDataFolder().exists()) getDataFolder().mkdir();
+
+        File config = new File(getDataFolder(), "config.yml");
+        if(!config.exists()) {
+            try {
+                config.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        YamlConfiguration configuration = YamlConfiguration.loadConfiguration(config);
+
+        configuration.options().copyDefaults(true);
+        configuration.options().parseComments(true);
+
+        configuration.options().setHeader(Arrays.asList("Configuration for FileManager",
+                "",
+                "FileManager is a plugin, made for server owners, to not have the need to edit their files by opening the",
+                "file, editing and then restarting the server.",
+                "With FileManager this is done ingame! You can edit all your entries ingame, and the saving is done",
+                "automatically! With your agreement the plugin even searches for the entries and replaces them in the working",
+                "plugin! No need to restart the server or anything."));
+
+        configuration.addDefault("debug", false);
+
+        try {
+            configuration.save(config);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        debug = configuration.getBoolean("debug");
 
     }
 

@@ -30,7 +30,7 @@ public class LineBuilder {
 
     public LineBuilder addListAsLine(List<String> list, String prefix, String suffix){
         for(String str : list){
-            addLine(prefix + str + suffix, Utils.textToSpaces(ChatColor.stripColor(prefix)));
+            addLine(prefix + str + suffix, Utils.textToSpaces(ChatColor.stripColor(prefix) + "§7"));
         }
         return this;
     }
