@@ -7,15 +7,14 @@ package mxrlin.file;
 
 import fr.minuskube.inv.InventoryManager;
 import mxrlin.file.commands.FileManagerCommand;
+import mxrlin.file.listener.PlayerDataListener;
 import mxrlin.file.misc.Metrics;
+import mxrlin.file.misc.data.PlayerData;
 import org.bukkit.Bukkit;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.IntUnaryOperator;
 import java.util.logging.Level;
 
 public class FileManager extends JavaPlugin {
@@ -34,10 +33,15 @@ public class FileManager extends JavaPlugin {
 
     private Metrics metrics;
 
+    public Map<UUID, PlayerData> data;
+
     @Override
     public void onEnable() {
 
         instance = this;
+
+        data = new HashMap<>();
+
         manager = new InventoryManager(this);
         manager.init();
 
@@ -45,11 +49,9 @@ public class FileManager extends JavaPlugin {
         getImplementationError();
 
         metrics = new Metrics(this, 15053);
-        // add custom charts
+        // TODO: 07.05.2022 maybe add custom charts
 
-        /*
-
-         */
+        Bukkit.getPluginManager().registerEvents(new PlayerDataListener(), this);
 
         getCommand("filemanager").setExecutor(new FileManagerCommand());
 
@@ -93,6 +95,14 @@ public class FileManager extends JavaPlugin {
         }
         Random random = new Random();
         return implementationErrorMessages.get(random.nextInt(implementationErrorMessages.size()));
+    }
+
+    public PlayerData getPlayerData(UUID uuid){
+        return data.get(uuid);
+    }
+
+    public PlayerData getPlayerData(Player player){
+        return data.get(player.getUniqueId());
     }
 
 }

@@ -15,6 +15,7 @@ import fr.minuskube.inv.content.SlotIterator;
 import mxrlin.file.FileManager;
 import mxrlin.file.inventorys.DirectoryInventory;
 import mxrlin.file.misc.ObjectType;
+import mxrlin.file.misc.data.PlayerData;
 import mxrlin.file.misc.item.ItemBuilder;
 import mxrlin.file.misc.item.Skull;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -34,9 +35,6 @@ public class EntryCreator {
     private Entry currentEntry;
     private Consumer<Entry> consumerOnClose;
 
-    private Map<UUID, String> currentInvState; // TODO: 22.04.2022 add both maps to playerdata (do a map in playerdata with entry you can do custom)
-    private Map<UUID, ObjectType> setValueType;
-
     private final ClickableItem glass = ClickableItem.empty(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayname(" ").build());
 
     public EntryCreator(Consumer<Entry> consumerOnClose) {
@@ -44,8 +42,11 @@ public class EntryCreator {
         this.consumerOnClose = consumerOnClose;
         this.currentEntry = new Entry("", null);
 
+        /*
         this.currentInvState = new HashMap<>();
         this.setValueType = new HashMap<>();
+
+         */
 
     }
 
@@ -55,19 +56,17 @@ public class EntryCreator {
                     @Override
                     public void init(Player player, InventoryContents inventoryContents) {
 
-                        if(!DirectoryInventory.updatingInventorys.contains(player.getUniqueId())){
-                            currentInvState.remove(player.getUniqueId());
-                            currentInvState.put(player.getUniqueId(), "");
-                        }else DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
+                        PlayerData data = FileManager.getInstance().getPlayerData(player);
+                        data.addDataIfKeyNotSet(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate", "");
 
-                        String state = currentInvState.get(player.getUniqueId());
+                        String currentInvState = data.getData(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate");
 
                         inventoryContents.fill(glass);
 
-                        if (state == "") {
-                            applyBasicState(player, inventoryContents);
-                        }else if(state == "setval"){
-                            applySetValState(player, inventoryContents);
+                        if (currentInvState == "") {
+                            applyBasicState(player, inventoryContents, data);
+                        }else if(currentInvState == "setval"){
+                            applySetValState(player, inventoryContents, data);
                         }
 
                     }
@@ -75,19 +74,22 @@ public class EntryCreator {
                     @Override
                     public void update(Player player, InventoryContents inventoryContents) {
 
-                        String state = currentInvState.get(player.getUniqueId());
+                        PlayerData data = FileManager.getInstance().getPlayerData(player);
+                        data.addDataIfKeyNotSet(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate", "");
 
-                        if (state == "") {
+                        String currentInvState = data.getData(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate");
+
+                        if (currentInvState == "") {
                             inventoryContents.fill(glass);
-                            applyBasicState(player, inventoryContents);
-                        }else if(state == "setval"){
+                            applyBasicState(player, inventoryContents, data);
+                        }else if(currentInvState == "setval"){
                             inventoryContents.fill(glass);
-                            applySetValState(player, inventoryContents);
+                            applySetValState(player, inventoryContents, data);
                         }
 
                     }
 
-                    private void applyBasicState(Player player, InventoryContents inventoryContents) {
+                    private void applyBasicState(Player player, InventoryContents inventoryContents, PlayerData data) {
                         inventoryContents.set(1, 2, ClickableItem.of(new ItemBuilder(Material.NAME_TAG)
                                 .setDisplayname("§7Key")
                                 .setLore("§8§m-----",
@@ -125,12 +127,12 @@ public class EntryCreator {
                                 .setLore("§8§m-----",
                                         "§7Currently: " + (currentEntry.getValue() == null ? "§c?" : "§a" + currentEntry.getValue()))
                                 .build(), inventoryClickEvent -> {
-                            currentInvState.replace(player.getUniqueId(), "setval");
+                            data.addData(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate", "setval");
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
                     }
 
-                    private void applySetValState(Player player, InventoryContents inventoryContents){
+                    private void applySetValState(Player player, InventoryContents inventoryContents, PlayerData data){
                         Pagination pagination = inventoryContents.pagination();
 
                         List<ClickableItem> items = new ArrayList<>();
@@ -144,7 +146,7 @@ public class EntryCreator {
 
                             items.add(ClickableItem.of(item, inventoryClickEvent -> {
 
-                                setValueType.put(player.getUniqueId(), type);
+                                data.addData(PlayerData.Prefixes.ENTRY_CREATOR + "valtype", type);
                                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
 
                             }));
@@ -171,29 +173,37 @@ public class EntryCreator {
                             DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
                         }));
 
-                        ItemStack itemStack = new ItemBuilder((setValueType.containsKey(player.getUniqueId()) ?
-                                Skull.getCustomHead(setValueType.get(player.getUniqueId()).getHeadId()).getSkull() : new ItemStack(Material.BARRIER)))
+                        ItemStack type;
+                        ObjectType objectType = null;
+
+                        if(data.keyIsSet(PlayerData.Prefixes.ENTRY_CREATOR + "valtype")){
+                            objectType = data.getData(PlayerData.Prefixes.ENTRY_CREATOR + "valtype");
+                            type = new ItemBuilder(Skull.getCustomHead(objectType.getHeadId())).build();
+                        }else type = new ItemBuilder(Material.BARRIER).build();
+
+                        ItemStack itemStack = new ItemBuilder(type)
                                 .setDisplayname("§7Currently selected:")
-                                .setLore("§8> " + (setValueType.containsKey(player.getUniqueId()) ? "§7" + setValueType.get(player.getUniqueId()).getDisplayName() : "§c?"))
+                                .setLore("§8> " + (data.keyIsSet(PlayerData.Prefixes.ENTRY_CREATOR + "valtype") ? "§7" + objectType.getDisplayName() : "§c?"))
                                 .build();
                         inventoryContents.set(2, 3, ClickableItem.empty(itemStack));
 
+                        ObjectType finalObjectType = objectType;
                         inventoryContents.set(1, 7, ClickableItem.of(new ItemBuilder(Material.OAK_SIGN)
                                 .setDisplayname("§7Set Value")
                                 .build(), inventoryClickEvent -> {
 
-                            if(!setValueType.containsKey(player.getUniqueId())){
+                            if(!data.keyIsSet(PlayerData.Prefixes.ENTRY_CREATOR + "valtype")){
                                 player.sendMessage("§7Select a data type before doing that!");
                                 return;
                             }
 
-                            ObjectType type = setValueType.get(player.getUniqueId());
+                            ObjectType type1 = data.getData(PlayerData.Prefixes.ENTRY_CREATOR + "valtype");
 
-                            if(type == ObjectType.NOT_SUPPORTED){
+                            if(type1 == ObjectType.NOT_SUPPORTED){
                                 player.sendMessage("§cCan't set the value with an unsupported type!");
                                 return;
                             }
-                            if(type == ObjectType.LIST){
+                            if(type1 == ObjectType.LIST){
                                 player.sendMessage(FileManager.getInstance().getImplementationError()); // TODO: 22.04.2022 implement
                                 return;
                             }
@@ -206,28 +216,27 @@ public class EntryCreator {
                                         if(!DirectoryInventory.updatingInventorys.contains(player1.getUniqueId())){
                                             player1.sendMessage("§cYou closed the inventory and the input won't be saved.");
                                             player1.playSound(player1.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                                            DirectoryInventory.updatingInventorys.add(player1.getUniqueId());
-                                            Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getInventory().open(player1), 5);
-                                        }
+                                        }else DirectoryInventory.updatingInventorys.remove(player1.getUniqueId());
+                                        Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getInventory().open(player1), 5);
                                     })
                                     .onComplete((player1, s) -> {
 
                                         Object obj = null;
 
                                         try{
-                                            obj = ObjectType.getStringAsObjectTypeObject(type, s);
+                                            obj = ObjectType.getStringAsObjectTypeObject(finalObjectType, s);
                                         }catch (Exception ignored){} // ignore because error message is handling on "obj == null"
 
                                         if(obj == null){
                                             player1.playSound(player1.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                                            player1.sendMessage("§cThat doesn't work as an " + type.getDisplayName() + "!");
+                                            player1.sendMessage("§cThat doesn't work as an " + finalObjectType.getDisplayName() + "!");
                                         }else{
                                             currentEntry.value = obj;
                                             player1.playSound(player1.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
                                         }
+
                                         DirectoryInventory.updatingInventorys.add(player1.getUniqueId());
-                                        currentInvState.replace(player.getUniqueId(), "");
-                                        Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getInventory().open(player1), 5);
+                                        data.addData(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate", "");
                                         return AnvilGUI.Response.close();
                                     })
                                     .text("")
@@ -245,19 +254,22 @@ public class EntryCreator {
                 .listener(new InventoryListener<>(InventoryCloseEvent.class, inventoryCloseEvent -> {
 
                     Player player = (Player) inventoryCloseEvent.getPlayer();
+                    PlayerData data = FileManager.getInstance().getPlayerData(player);
+
+                    player.sendMessage((DirectoryInventory.updatingInventorys.contains(player.getUniqueId()) ? "§ais" : "§cisnt") + " in list");
 
                     if(!DirectoryInventory.updatingInventorys.contains(player.getUniqueId())){
 
-                        String state = currentInvState.get(player.getUniqueId());
+                        String state = data.getData(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate");
                         if(state == "setval"){
-                            setValueType.remove(player.getUniqueId());
-                            currentInvState.replace(player.getUniqueId(), "");
+                            data.addData(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate", "");
+                            data.remKey(PlayerData.Prefixes.ENTRY_CREATOR + "valtype");
                             Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getInventory().open(player), 2);
                             return;
                         }
 
                         consumerOnClose.accept(currentEntry);
-                        currentInvState.remove(player.getUniqueId());
+                        data.remKey(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate");
                     }
                 }))
                 .build();

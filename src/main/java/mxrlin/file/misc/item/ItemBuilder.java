@@ -41,18 +41,33 @@ public class ItemBuilder {
         return this;
     }
 
-    // TODO: 26.04.2022 lorebuilder
-    /*
-    set a new line to the lore and a max char length and it automatically cuts
-     */
+    private LineBuilder stringListToLoreBuilder(List<String> lore){
+        LineBuilder loreBuilder = new LineBuilder();
+        lore.forEach(s -> loreBuilder.addLineIgnoringMaxLength(s));
+        return loreBuilder;
+    }
 
+    /**
+     * @deprecated Use {@link ItemBuilder#setLore(LineBuilder)} instead
+     */
+    @Deprecated
     public ItemBuilder setLore(String... lore){
         return setLore(Arrays.asList(lore));
     }
 
+    /**
+     * @deprecated Use {@link ItemBuilder#setLore(LineBuilder)} instead
+     */
+    @Deprecated
     public ItemBuilder setLore(List<String> lore){
+        LineBuilder loreBuilder = stringListToLoreBuilder(lore);
+        setLore(loreBuilder);
+        return this;
+    }
+
+    public ItemBuilder setLore(LineBuilder builder){
         ItemMeta meta = itemStack.getItemMeta();
-        meta.setLore(lore);
+        meta.setLore(builder.build());
         itemStack.setItemMeta(meta);
         return this;
     }
