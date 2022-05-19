@@ -14,6 +14,7 @@ File Manager is a Spigot plugin, made for server owners, to not have the need to
 
 ## Links
 * Join the [Discord](https://discord.gg/2ajfpDvn2b) for support, updates and news.
+* Download the plugin at the [SpigotMC Ressource](https://www.spigotmc.org/resources/filemanager.102079/).
 
 ## Libraries
 * [SmartInvs](https://www.spigotmc.org/resources/smartinvs-advanced-inventory-api.42835/ "Click to go to SmartInvs!")
