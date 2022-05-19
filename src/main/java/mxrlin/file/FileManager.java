@@ -10,6 +10,8 @@ import mxrlin.file.commands.FileManagerCommand;
 import mxrlin.file.listener.PlayerDataListener;
 import mxrlin.file.misc.Metrics;
 import mxrlin.file.misc.data.PlayerData;
+import mxrlin.file.updater.Downloader;
+import mxrlin.file.updater.UpdateCheck;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -25,10 +27,8 @@ public class FileManager extends JavaPlugin {
 
     // TODO: 19.05.2022 add more editor: json,
 
-    /**
-     * Plugin Idea:
-     * View and edit .yml + .json + .txt Files in a Bukkit Inventory
-     */
+    public static final int     SPIGOT_ID       = 102079;
+    public static final String  RESOURCE_LINK   = "https://www.spigotmc.org/resources/filemanager.102079/";
 
     private static FileManager instance;
 
@@ -41,27 +41,50 @@ public class FileManager extends JavaPlugin {
 
     public Map<UUID, PlayerData> data;
 
+    private boolean checkUpdate;
+    private boolean downloadUpdate;
+
     @Override
     public void onEnable() {
+
+        getLogger().log(Level.INFO, "Booting FileManager up...");
 
         instance = this;
 
         data = new HashMap<>();
 
+        getLogger().log(Level.INFO, "Loading Config...");
+
         loadConfig();
+
+        getLogger().log(Level.INFO, "Checking for Updates...");
+        getLogger().log(Level.INFO, "UpdateChecker Response:");
+
+        checkUpdate();
+
+        getLogger().log(Level.INFO, "========");
+        getLogger().log(Level.INFO, "Initializing InventoryManager...");
 
         manager = new InventoryManager(this);
         manager.init();
 
+        getLogger().log(Level.INFO, "Initializing Implementation Error Messages...");
+
         implementationErrorMessages = new ArrayList<>();
         getImplementationError();
+
+        getLogger().log(Level.INFO, "Initializing bStats Metrics for the plugin...");
 
         metrics = new Metrics(this, 15053);
         // TODO: 07.05.2022 maybe add custom charts
 
+        getLogger().log(Level.INFO, "Adding Commands and Listeners...");
+
         Bukkit.getPluginManager().registerEvents(new PlayerDataListener(), this);
 
         getCommand("filemanager").setExecutor(new FileManagerCommand());
+
+        getLogger().log(Level.INFO, "FileManager successfully booted up!");
 
     }
 
@@ -92,6 +115,8 @@ public class FileManager extends JavaPlugin {
                 "plugin! No need to restart the server or anything."));
 
         configuration.addDefault("debug", false);
+        configuration.addDefault("update.check", true);
+        configuration.addDefault("update.download", true);
 
         try {
             configuration.save(config);
@@ -100,6 +125,47 @@ public class FileManager extends JavaPlugin {
         }
 
         debug = configuration.getBoolean("debug");
+        checkUpdate = configuration.getBoolean("update.check");
+        downloadUpdate = configuration.getBoolean("update.download");
+
+    }
+
+    private void checkUpdate(){
+
+        if(checkUpdate){
+            UpdateCheck check = new UpdateCheck(this, SPIGOT_ID);
+
+            if(check.isUpdateAvailable()){
+
+                if(downloadUpdate){
+
+                    File dest = new File(getDataFolder() + "/Plugin");
+                    Downloader downloader = new Downloader(this, SPIGOT_ID, dest);
+                    try {
+                        downloader.download();
+                        getLogger().log(Level.INFO, "Successfully downloaded the latest version of the plugin in " + dest.getAbsolutePath());
+                    } catch (Exception e) {
+                        getLogger().log(Level.INFO, "Failed to download the latest version of the plugin! Error: " + e.getMessage());
+                    }
+
+                }else{
+
+                    getLogger().log(Level.INFO, "A new Update is available for the Plugin!");
+                    getLogger().log(Level.INFO, "Download it now here: " + RESOURCE_LINK);
+
+                }
+
+            }else{
+
+                getLogger().log(Level.INFO, "No update is available. You're on the newest Version!");
+
+            }
+
+        }else {
+
+            getLogger().log(Level.INFO, "You deactivated checking for updates.");
+
+        }
 
     }
 
