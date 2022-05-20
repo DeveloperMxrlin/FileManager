@@ -20,6 +20,8 @@ File Manager is a Spigot plugin, made for server owners, to not have the need to
 * [SmartInvs](https://www.spigotmc.org/resources/smartinvs-advanced-inventory-api.42835/ "Click to go to SmartInvs!")
 * [AnvilGUI](https://github.com/WesJD/AnvilGUI "Click to go to AnvilGUI!")
 * [ASM](https://asm.ow2.io "Click to go to ASM!")
+* [Gson](https://en.wikipedia.org/wiki/Gson "Click to learn more about Gson!")
+* [OkHttp](https://square.github.io/okhttp/ "Click to learn more about OkHttp!")
 
 ## API
 To use the included API of FileManager, first implement the plugin.
