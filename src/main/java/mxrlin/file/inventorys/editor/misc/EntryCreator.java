@@ -204,7 +204,18 @@ public class EntryCreator {
                                 return;
                             }
                             if(type1 == ObjectType.LIST){
-                                player.sendMessage(FileManager.getInstance().getImplementationError()); // TODO: 22.04.2022 implement
+                                ListEditor editor = new ListEditor(new ArrayList<>(), (inventoryCloseEvent, objects) -> {
+
+                                    Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> {
+                                        getInventory().open(player);
+                                    }, 2);
+                                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+                                    currentEntry.value = objects;
+
+                                });
+                                DirectoryInventory.updatingInventorys.add(player.getUniqueId());
+                                editor.getInventory().open(player);
+                                DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
                                 return;
                             }
 
@@ -255,8 +266,6 @@ public class EntryCreator {
 
                     Player player = (Player) inventoryCloseEvent.getPlayer();
                     PlayerData data = FileManager.getInstance().getPlayerData(player);
-
-                    player.sendMessage((DirectoryInventory.updatingInventorys.contains(player.getUniqueId()) ? "§ais" : "§cisnt") + " in list");
 
                     if(!DirectoryInventory.updatingInventorys.contains(player.getUniqueId())){
 

@@ -80,25 +80,28 @@ public class ListEditor {
                                 .blacklist(1, 8).blacklist(2, 8).blacklist(3, 8).blacklist(4, 8));
 
                         inventoryContents.set(5, 3, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_LEFT).setDisplayname("§7Previous Page").build(), inventoryClickEvent -> {
+                            DirectoryInventory.updatingInventorys.add(player.getUniqueId());
                             getInventory().open(player, pagination.previous().getPage());
+                            DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
                         }));
 
                         inventoryContents.set(5, 5, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_RIGHT).setDisplayname("§7Next Page").build(), inventoryClickEvent -> {
+                            DirectoryInventory.updatingInventorys.add(player.getUniqueId());
                             getInventory().open(player, pagination.next().getPage());
+                            DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
                         }));
 
                         inventoryContents.set(5, 4, ClickableItem.of(new ItemBuilder(Skull.LIME_PLUS).setDisplayname("§7Add Value").build(), inventoryClickEvent -> {
 
+                            ObjectType type = null;
                             if(list.isEmpty()){
-                                player.sendMessage(FileManager.getInstance().getImplementationError()); // TODO: 22.04.2022 implement 
-                                return;
-                            }
-
-                            ObjectType type = ObjectType.getType(list.get(0));
+                                type = ObjectType.NOT_SUPPORTED;
+                            }else type = ObjectType.getType(list.get(0));
 
                             DirectoryInventory.updatingInventorys.add(player.getUniqueId());
                             player.closeInventory();
                             DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
+                            ObjectType finalType = type;
                             new AnvilGUI.Builder()
                                     .onClose(player1 -> {
                                         if(!DirectoryInventory.updatingInventorys.contains(player1.getUniqueId())){
@@ -108,19 +111,30 @@ public class ListEditor {
                                     })
                                     .onComplete((player1, s) -> {
 
-                                        Object finalValue = null;
+                                        if(list.isEmpty()){
 
-                                        try{
-                                            finalValue = ObjectType.getStringAsObjectTypeObject(type, s);
-                                        }catch (Exception e){
-                                            player1.sendMessage("§7Couldn't convert string to required value type. (" + type.getDisplayName() + ")");
-                                        }
-                                        if(finalValue == null){
-                                            player1.playSound(player1.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
-                                        }else{
+                                            ObjectType objectType = ObjectType.getTypeOfString(s);
+
+                                            list.add(ObjectType.getStringAsObjectTypeObject(objectType, s));
+
                                             player1.sendMessage("§7Successfully added a new value to the List!");
                                             player1.playSound(player1.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-                                            list.add(finalValue);
+
+                                        }else{
+                                            Object finalValue = null;
+
+                                            try{
+                                                finalValue = ObjectType.getStringAsObjectTypeObject(finalType, s);
+                                            }catch (Exception e){
+                                                player1.sendMessage("§7Couldn't convert string to required value type. (" + finalType.getDisplayName() + ")");
+                                            }
+                                            if(finalValue == null){
+                                                player1.playSound(player1.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                                            }else{
+                                                player1.sendMessage("§7Successfully added a new value to the List!");
+                                                player1.playSound(player1.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+                                                list.add(finalValue);
+                                            }
                                         }
 
                                         DirectoryInventory.updatingInventorys.add(player1.getUniqueId());

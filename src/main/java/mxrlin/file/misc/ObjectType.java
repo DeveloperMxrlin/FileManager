@@ -5,6 +5,9 @@
 
 package mxrlin.file.misc;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -79,11 +82,49 @@ public enum ObjectType {
             case DOUBLE:
                 return Double.parseDouble(str);
             case LIST:
+                return stringToList(str);
             case NOT_SUPPORTED:
             default:
                 break;
         }
         return null;
+    }
+
+
+    public static ObjectType getTypeOfString(String str){
+        if(str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")){
+            return ObjectType.BOOLEAN;
+        }
+        try{
+            Double.parseDouble(str);
+            return ObjectType.DOUBLE;
+        }catch (NumberFormatException ignored){}
+        try{
+            Float.parseFloat(str);
+            return ObjectType.FLOAT;
+        }catch (NumberFormatException ignored){}
+        try{
+            Integer.parseInt(str);
+            return ObjectType.INTEGER;
+        }catch (NumberFormatException ignored){}
+
+        if(stringIsList(str)){
+            return ObjectType.LIST;
+        }
+
+        return ObjectType.STRING;
+    }
+
+    private static List<String> stringToList(String list){
+
+        list = list.replaceFirst("\\[", "");
+        list = list.substring(0, list.length()-1);
+
+        return Arrays.asList(list.split(", "));
+    }
+
+    private static boolean stringIsList(String str){
+        return str.startsWith("[") && str.startsWith("]") && stringToList(str) != null;
     }
 
 }
