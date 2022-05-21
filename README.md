@@ -25,7 +25,24 @@ File Manager is a Spigot plugin, made for server owners, to not have the need to
 
 ## API
 To use the included API of FileManager, first implement the plugin.
-After that go ahead and use `FileManager#INSTANCE` to use all methods of the API that are included right now.
+
+To implement the plugin you can either use maven:
+```
+  <dependency>
+	    <groupId>com.github.DeveloperMxrlin</groupId>
+	    <artifactId>FileManager</artifactId>
+	    <version>VERSION</version>
+	</dependency>
+```
+Or you're using gradle:
+```
+  dependencies {
+	        implementation 'com.github.DeveloperMxrlin:FileManager:VERSION'
+	}
+```
+For both methods you will have to add [JitPack](https://jitpack.io) to your repository.
+
+After implemented, use the method `FileManagerAPI#INSTANCE` to get all available methods that are working for the API.
 
 ## License
 This Repository uses a **MIT License**.
