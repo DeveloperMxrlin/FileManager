@@ -5,6 +5,7 @@
 
 package mxrlin.file.misc.item;
 
+import kotlin.text.Regex;
 import mxrlin.file.misc.Utils;
 import org.bukkit.ChatColor;
 
@@ -14,10 +15,11 @@ import java.util.List;
 
 public class LineBuilder {
 
-    public static final int DEF_MAX_LENGTH_PER_LINE = 32;
+    public static final int DEF_MAX_LENGTH_PER_LINE = 48;
 
     private int maxLength;
     private List<String> lines;
+    private String staticPrefix;
 
     public LineBuilder(){
         this(DEF_MAX_LENGTH_PER_LINE);
@@ -26,6 +28,12 @@ public class LineBuilder {
     public LineBuilder(int maxLength){
         this.maxLength = maxLength;
         lines = new ArrayList<>();
+        this.staticPrefix = null;
+    }
+
+    public LineBuilder setStaticPrefix(String prefix){
+        this.staticPrefix = prefix;
+        return this;
     }
 
     public LineBuilder addListAsLine(List<String> list, String prefix, String suffix){
@@ -41,13 +49,21 @@ public class LineBuilder {
     }
 
     public LineBuilder addLine(String str){
-        return addLine(str, "");
+        return addLine(str, (staticPrefix != null ? staticPrefix : ""));
     }
 
     public LineBuilder addLine(String str, String prefixForNewLine){
-        if(str.length() <= maxLength) addLineIgnoringMaxLength(str);
+        return addLine(str, prefixForNewLine, "def");
+    }
+
+    public LineBuilder addLine(String str, String prefixForNewLine, String regex){
+        if(prefixForNewLine.contains("%static%") && (staticPrefix != null && !staticPrefix.isEmpty()))
+            prefixForNewLine = prefixForNewLine.replace("%static%", staticPrefix);
+
+        if(str.length() <= maxLength)
+            addLineIgnoringMaxLength(str);
         else {
-            String[] split = Utils.split(str, maxLength);
+            String[] split = Utils.split(str, maxLength, regex);
             for(int i = 0; i < split.length; i++){
                 String s = split[i];
                 if(i != 0) lines.add(prefixForNewLine + s);

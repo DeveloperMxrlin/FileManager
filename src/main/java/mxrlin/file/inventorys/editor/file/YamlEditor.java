@@ -198,22 +198,38 @@ public class YamlEditor implements FileEditor {
                                 .blacklist(2, 7).blacklist(2, 8));
 
                         PlayerData.InformationType type = data.getData(PlayerData.Prefixes.YAML_EDITOR + "informationtype");
+                        PlayerData.InformationType nextInfo = data.getNextInformationType(type);
 
                         inventoryContents.set(1, 8, ClickableItem.of(new ItemBuilder(Material.OAK_SIGN)
                                         .setDisplayname("§7Change Information Type")
-                                        .setLore("§8§m-----", "§7Current: " + type, "§7Next: " + data.getNextInformationType(type))
+                                        .setLore(new LineBuilder()
+                                                .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
+                                                .addLine("§8§m-----")
+                                            .addLine("§7Current: " + type)
+                                            .addLine(" §7-> " + type.getDescription())
+                                            .addLine("§8§m-----")
+                                            .addLine("§7Next: " + nextInfo)
+                                            .addLine(" §7-> " + nextInfo.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "informationtype", data.getNextInformationType(type));
+                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "informationtype", nextInfo);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 
                         PlayerData.SaveType saveType = data.getData(PlayerData.Prefixes.YAML_EDITOR + "savetype");
+                        PlayerData.SaveType next = data.getNextSaveType(saveType);
 
                         inventoryContents.set(2, 8, ClickableItem.of(new ItemBuilder(Skull.STRUCTURE_BLOCK_SAVE)
                                         .setDisplayname("§7Change Save Type")
-                                        .setLore("§8§m-----", "§7Current: " + saveType, "§7Next: " + data.getNextSaveType(saveType))
+                                        .setLore(new LineBuilder()
+                                                .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
+                                                .addLine("§8§m-----")
+                                               .addLine("§7Current: " + saveType)
+                                               .addLine(" §7-> " + saveType.getDescription())
+                                               .addLine("§8§m-----")
+                                               .addLine("§7Next: " + next)
+                                               .addLine(" §7-> " + next.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "savetype", data.getNextSaveType(saveType));
+                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "savetype", next);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 
@@ -223,12 +239,13 @@ public class YamlEditor implements FileEditor {
                         try {
                             inventoryContents.set(3, 8, ClickableItem.empty(new ItemBuilder(Skull.OAK_WOOD_QUESTION_MARK)
                                     .setDisplayname("§7File Information")
-                                    .setLore("§8§m-----",
-                                            "§8> §7Last Edit: " + format.format(currentFile.lastModified()),
-                                            "§8> §7Path: " + currentFile.getAbsolutePath(),
-                                            "§8> §7Type: Yaml",
-                                            "§8> §7Keys: " + (keys.size()-1) + "x",
-                                            "§8> §7Size: " + Utils.humanReadableByteCountSI(Files.size(file.toPath())))
+                                                    .setLore(new LineBuilder()
+                                                            .addLine("§8§m-----")
+                                                            .addLine("§8> §7Last Edit: " + format.format(currentFile.lastModified()))
+                                                            .addLineIgnoringMaxLength("§8> §7Path: " + currentFile.getAbsolutePath())
+                                                            .addLine("§8> §7Type: Yaml")
+                                                            .addLine("§8> §7Keys: " + (keys.size()-1) + "x")
+                                                            .addLine("§8> §7Size: " + Utils.humanReadableByteCountSI(Files.size(file.toPath()))))
                                     .build()));
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -425,22 +442,38 @@ public class YamlEditor implements FileEditor {
                                 .blacklist(2, 7).blacklist(2, 8));
 
                         PlayerData.InformationType type = data.getData(PlayerData.Prefixes.YAML_EDITOR + "informationtype");
+                        PlayerData.InformationType nextInfo = data.getNextInformationType(type);
 
                         inventoryContents.set(1, 8, ClickableItem.of(new ItemBuilder(Material.OAK_SIGN)
                                 .setDisplayname("§7Change Information Type")
-                                .setLore("§8§m-----", "§7Current: " + type, "§7Next: " + data.getNextInformationType(type))
+                                .setLore(new LineBuilder()
+                                        .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Current: " + type)
+                                        .addLine(" §7-> " + type.getDescription())
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Next: " + nextInfo)
+                                        .addLine(" §7-> " + nextInfo.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "informationtype", data.getNextInformationType(type));
+                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "informationtype", nextInfo);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 
                         PlayerData.SaveType saveType = data.getData(PlayerData.Prefixes.YAML_EDITOR + "savetype");
+                        PlayerData.SaveType next = data.getNextSaveType(saveType);
 
                         inventoryContents.set(2, 8, ClickableItem.of(new ItemBuilder(Skull.STRUCTURE_BLOCK_SAVE)
                                 .setDisplayname("§7Change Save Type")
-                                .setLore("§8§m-----", "§7Current: " + saveType, "§7Next: " + data.getNextSaveType(saveType))
+                                .setLore(new LineBuilder()
+                                        .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Current: " + saveType)
+                                        .addLine(" §7-> " + saveType.getDescription())
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Next: " + next)
+                                        .addLine(" §7-> " + next.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "savetype", data.getNextSaveType(saveType));
+                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "savetype", next);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 

@@ -83,19 +83,38 @@ public class PlayerData {
 
     }
 
-    public static enum SaveType {
+    public enum SaveType {
 
-        SEARCH_RELOAD,
-        SEARCH,
-        RELOAD,
-        NOTHING;
+        SEARCH_RELOAD("First try to search within the plugin for something to replace, if that wasn't sucessful, reload the plugin."),
+        SEARCH("Try to search within the plugin for something to replace."),
+        RELOAD("Reload the plugin."),
+        NOTHING("Nothing happens, and the values won't get updated.");
 
+        private String desc;
+
+        SaveType(String desc){
+            this.desc = desc;
+        }
+
+        public String getDescription() {
+            return desc;
+        }
     }
 
-    public static enum InformationType {
+    public enum InformationType {
 
-        ALL,
-        NOTHING;
+        ALL("Shows all Informations about a Value"),
+        NOTHING("Shows no Information about a Value");
+
+        private String desc;
+
+        InformationType(String desc){
+            this.desc = desc;
+        }
+
+        public String getDescription() {
+            return desc;
+        }
 
     }
 

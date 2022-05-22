@@ -9,7 +9,9 @@ import org.bukkit.ChatColor;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class Utils {
 
@@ -25,30 +27,35 @@ public class Utils {
         return String.format("%.1f %cB", bytes / 1000.0, ci.current());
     }
 
-    public static String[] split(String str, int maxLength){
+    public static String[] split(String str, int maxLength, String regex){
+
+        if(regex.equalsIgnoreCase("def")) regex = "\\s+";
         if(str.length() <= maxLength) return new String[]{str};
-        int lines = (int) Math.ceil((double) str.length() / maxLength);
-        String[] splittedStr = new String[lines];
 
-        int numBefore = 0;
+        List<String> splitStr = new ArrayList<>();
+        String[] words = str.split(regex);
+        StringBuilder currentLine = new StringBuilder();
+        int i = 0;
 
-        for(int i = 0; i < splittedStr.length; i++){
+        for(String word : words){
 
-            int numFrom = numBefore;
-            int numUntil = numBefore + maxLength;
+            int length = currentLine.length() + word.length() + 1;
 
-            if(numUntil > str.length()){
-                numUntil = str.length();
+            if(length > maxLength){
+                splitStr.add(currentLine.toString());
+                currentLine = new StringBuilder(word);
+            }else{
+                currentLine.append((i == 0 ? "" : " ")).append(word);
             }
-
-            splittedStr[i] = str.substring(numFrom, numUntil);
-            numBefore = numUntil;
-
-            if(numUntil >= str.length()) break;
+            i++;
 
         }
 
-        return splittedStr;
+        if(!currentLine.toString().isEmpty()){
+            splitStr.add(currentLine.toString());
+        }
+
+        return splitStr.toArray(new String[0]);
     }
 
     public static String textToSpaces(String text){
