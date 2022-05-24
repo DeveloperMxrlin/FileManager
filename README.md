@@ -1,12 +1,12 @@
 ![FileManager Logo](https://i.postimg.cc/7ZgqpDQP/File-Manager-Logo.png "FileManager Logo")
 [
-  ![test](https://img.shields.io/bstats/players/15053?style=for-the-badge "Click to see stats!")
+  ![test](https://img.shields.io/bstats/players/15053?color=yellow&style=for-the-badge "Click to see stats!")
 ](https://bstats.org/plugin/bukkit/FileManager/15053 "Click to see stats!") 
 [
-  ![test](https://img.shields.io/bstats/servers/15053?style=for-the-badge "Click to see stats!")
+  ![test](https://img.shields.io/bstats/servers/15053?color=yellow&style=for-the-badge "Click to see stats!")
 ](https://bstats.org/plugin/bukkit/FileManager/15053 "Click to see stats!")
 [
-  ![test](https://img.shields.io/discord/968876186304393257?color=informational&label=Discord&style=for-the-badge "Click to join the discord!")
+  ![test](https://img.shields.io/discord/968876186304393257?color=yellow&label=Discord&style=for-the-badge "Click to join the discord!")
 ](https://discord.gg/2ajfpDvn2b "Click to join the discord!")
 # FileManager
 
