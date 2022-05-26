@@ -44,6 +44,13 @@ For both methods you will have to add [JitPack](https://jitpack.io) to your repo
 
 After implemented, use the method `FileManagerAPI#INSTANCE` to get all available methods that are working for the API.
 
+## Statistics
+
+* 28 Different Files
+* 25 Different Classes
+* 5000 Lines of Code
+* 200 KB of Code
+
 ## License
 This Repository uses a **MIT License**.
 
