@@ -25,9 +25,9 @@ import java.util.logging.Level;
 
 public class FileManager extends JavaPlugin {
 
-    // TODO: 19.05.2022 add more editor: json,
-    // TODO: 21.05.2022 change start directory to the server directory
-    // TODO: 21.05.2022 explain different savetypes, informationtypes 
+    // TODO: 19.05.2022 add more editor: json, txt, properties (MC-Server), worldwatcher PRIORITY #2
+    // TODO: 21.05.2022 change start directory to the server directory PRIORITY #2.1
+    // TODO: 23.05.2022 more options for directorywatcher: add file, rename file, del file #PRIORITY #1
 
     public static final int     SPIGOT_ID       = 102079;
     public static final String  RESOURCE_LINK   = "https://www.spigotmc.org/resources/filemanager.102079/";
@@ -78,7 +78,6 @@ public class FileManager extends JavaPlugin {
         getLogger().log(Level.INFO, "Initializing bStats Metrics for the plugin...");
 
         metrics = new Metrics(this, 15053);
-        // TODO: 07.05.2022 maybe add custom charts
 
         getLogger().log(Level.INFO, "Adding Commands and Listeners...");
 

@@ -15,7 +15,7 @@ import java.util.List;
 
 public class LineBuilder {
 
-    public static final int DEF_MAX_LENGTH_PER_LINE = 48;
+    public static final int DEF_MAX_LENGTH_PER_LINE = 56;
 
     private int maxLength;
     private List<String> lines;

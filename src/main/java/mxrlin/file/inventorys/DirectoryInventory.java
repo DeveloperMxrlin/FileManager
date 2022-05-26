@@ -15,8 +15,12 @@ import fr.minuskube.inv.content.SlotIterator;
 import mxrlin.file.FileManager;
 import mxrlin.file.inventorys.editor.EditorManager;
 import mxrlin.file.inventorys.editor.file.FileEditor;
+import mxrlin.file.misc.ObjectType;
+import mxrlin.file.misc.data.PlayerData;
 import mxrlin.file.misc.item.ItemBuilder;
+import mxrlin.file.misc.item.LineBuilder;
 import mxrlin.file.misc.item.Skull;
+import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -25,6 +29,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class DirectoryInventory {
@@ -58,7 +63,11 @@ public class DirectoryInventory {
                     @Override
                     public void init(Player player, InventoryContents inventoryContents) {
 
-                        inventoryContents.fillBorders(ClickableItem.empty(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayname(" ").build()));
+                        ClickableItem glass = ClickableItem.empty(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayname(" ").build());
+
+                        inventoryContents.fillBorders(glass);
+                        inventoryContents.fillColumn(7, glass);
+                        inventoryContents.fillRow(5, glass);
 
                         Pagination pagination = inventoryContents.pagination();
 
@@ -68,36 +77,14 @@ public class DirectoryInventory {
                             items.add(ClickableItem.of(new ItemBuilder(getMaterialFile(file)).setDisplayname("§7"+file.getName())
                                             .setLore(getLoreFile(file)).build(),
                                     inventoryClickEvent -> {
+
+                                PlayerData data = FileManager.getInstance().getPlayerData(inventoryClickEvent.getWhoClicked().getUniqueId());
+
                                         ItemStack itemStack = inventoryClickEvent.getCurrentItem();
                                         String fileName = itemStack.getItemMeta().getDisplayName().replace("§7", "");
                                         File clickedFile = new File(directory, fileName);
-                                        if(!clickedFile.exists()) {
-                                            player.sendMessage("§cThe clicked file seems to be deleted! Try to update the inventory.");
-                                            return;
-                                        }
 
-                                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
-
-                                        if(clickedFile.isDirectory() && clickedFile.listFiles() != null){
-                                            updatingInventorys.add(player.getUniqueId());
-                                            getDirectoryInventory(clickedFile).open(player);
-                                            updatingInventorys.remove(player.getUniqueId());
-                                            return;
-                                        }
-
-                                        FileEditor editor = EditorManager.INSTANCE.getEditorForFile(clickedFile);
-                                        if(editor != null){
-                                            SmartInventory inventory = editor.getInventory(clickedFile);
-                                            if(inventory == null) {
-                                                player.sendMessage("§cWhilst trying to open \"" + clickedFile.getName() + "\" the FileEditor had an error.");
-                                                return;
-                                            }
-                                            updatingInventorys.add(player.getUniqueId());
-                                            inventory.open(player);
-                                            updatingInventorys.remove(player.getUniqueId());
-                                        }else{
-                                            player.sendMessage("§cThere is no FileEditor for \"" + clickedFile.getName() + "\" registered.");
-                                        }
+                                        data.addData(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile", clickedFile);
 
                                     }));
                         }
@@ -155,13 +142,14 @@ public class DirectoryInventory {
                         });
 
                         pagination.setItems(items.toArray(new ClickableItem[0]));
-                        pagination.setItemsPerPage(4*7);
+                        pagination.setItemsPerPage(4*6);
 
                         pagination.addToIterator(inventoryContents.newIterator(SlotIterator.Type.HORIZONTAL, 1, 1)
                                 .blacklist(2, 0).blacklist(3, 0).blacklist(4, 0).blacklist(5, 0)
-                                .blacklist(1, 8).blacklist(2, 8).blacklist(3, 8).blacklist(4, 8));
+                                .blacklist(1, 8).blacklist(2, 8).blacklist(3, 8).blacklist(4, 8)
+                                .blacklist(1, 7).blacklist(2, 7).blacklist(3, 7).blacklist(4, 7));
 
-                        inventoryContents.set(5, 3, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_LEFT).setDisplayname("§7Previous Page").build(), inventoryClickEvent -> {
+                        inventoryContents.set(5, 2, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_LEFT).setDisplayname("§7Previous Page").build(), inventoryClickEvent -> {
                             getDirectoryInventory(directory).open(player, pagination.previous().getPage());
                         }));
 
@@ -173,6 +161,132 @@ public class DirectoryInventory {
 
                     @Override
                     public void update(Player player, InventoryContents inventoryContents) {
+
+                        PlayerData data = FileManager.getInstance().getPlayerData(player.getUniqueId());
+                        if(!data.keyIsSet(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile")){
+                            inventoryContents.set(1, 8, ClickableItem.empty(new ItemBuilder(Material.BARRIER).setDisplayname("Select a File").build()));
+                            inventoryContents.set(2, 8, ClickableItem.empty(new ItemBuilder(Material.BARRIER).setDisplayname("Select a File").build()));
+                            inventoryContents.set(3, 8, ClickableItem.empty(new ItemBuilder(Material.BARRIER).setDisplayname("Select a File").build()));
+                            inventoryContents.set(4, 8, ClickableItem.empty(new ItemBuilder(Material.BARRIER).setDisplayname("Select a File").build()));
+                            return;
+                        }
+
+                        File clickedFile = data.getData(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+
+                        inventoryContents.set(1, 8, ClickableItem.of(new ItemBuilder(Material.NAME_TAG)
+                                .setDisplayname("§7Rename " + (clickedFile.isFile() ? "File" : "Directory"))
+                                .setLore(new LineBuilder()
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Rename the current " + (clickedFile.isFile() ? "File" : "Directory"))
+                                        .addLine("§8§m-----").addLine("§7Current " + (clickedFile.isFile() ? "File" : "Directory") + "'s Name:", "§7")
+                                        .addLine("§8> §7" + clickedFile.getName(), "§7")).build(), inventoryClickEvent -> {
+
+                            if(!clickedFile.exists()){
+                                player.sendMessage("§cThe clicked file seems to be deleted! Try to update the inventory.");
+                                return;
+                            }
+
+                            data.remKey(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+                            new AnvilGUI.Builder()
+                                    .onClose(player1 -> {
+                                        if(!updatingInventorys.contains(player1.getUniqueId())){
+                                            player1.sendMessage("§cYou closed the inventory and the input won't be saved.");
+                                            player1.playSound(player1.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                                        }else updatingInventorys.remove(player1.getUniqueId());
+                                        Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getDirectoryInventory(clickedFile.getParentFile()).open(player1), 5);
+                                    })
+                                    .onComplete((player1, s) -> {
+
+                                        if(!clickedFile.exists()) player1.sendMessage("§cThe clicked file seems to be deleted, so it can't rename it.");
+                                        else{
+
+                                            File parent = clickedFile.getParentFile();
+
+                                            File newFile = new File(parent, s);
+                                            if(newFile.exists()) player1.sendMessage("§cYou can't rename it to \"" + s + "\" because that file already exists.");
+
+                                            boolean success = clickedFile.renameTo(newFile);
+                                            if(success){
+                                                player1.sendMessage("§7You successfully renamed the file to \"" + s + "\"");
+                                            }else{
+                                                player1.sendMessage("§7Renaming the file didn't work. Please try again later.");
+                                            }
+                                        }
+
+                                        updatingInventorys.add(player1.getUniqueId());
+                                        return AnvilGUI.Response.close();
+                                    })
+                                    .text(clickedFile.getName())
+                                    .title("§7Rename the file")
+                                    .plugin(FileManager.getInstance())
+                                    .itemLeft(new ItemBuilder(Material.NAME_TAG).setDisplayname("§7" + clickedFile.getName()).build())
+                                    .open(player);
+
+                        }));
+
+                        inventoryContents.set(2, 8, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_RIGHT_UP)
+                                .setDisplayname("§7Open " + (clickedFile.isFile() ? "File" : "Directory"))
+                                .setLore(new LineBuilder()
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Open the current " + (clickedFile.isFile() ? "File" : "Directory"))
+                                        .addLine("§8§m-----").addLine("§7Current " + (clickedFile.isFile() ? "File" : "Directory") + "'s Name:", "§7")
+                                        .addLine("§8> §7" + clickedFile.getName(), "§7"))
+                                .build(), inventoryClickEvent -> {
+
+                            if(!clickedFile.exists()) {
+                                player.sendMessage("§cThe clicked file seems to be deleted! Try to update the inventory.");
+                                return;
+                            }
+
+                            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
+
+                            if(clickedFile.isDirectory() && clickedFile.listFiles() != null){
+                                updatingInventorys.add(player.getUniqueId());
+                                data.remKey(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+                                getDirectoryInventory(clickedFile).open(player);
+                                updatingInventorys.remove(player.getUniqueId());
+                                return;
+                            }
+
+                            FileEditor editor = EditorManager.INSTANCE.getEditorForFile(clickedFile);
+                            if(editor != null){
+                                SmartInventory inventory = editor.getInventory(clickedFile);
+                                if(inventory == null) {
+                                    player.sendMessage("§cWhilst trying to open \"" + clickedFile.getName() + "\" the FileEditor had an error.");
+                                    return;
+                                }
+                                updatingInventorys.add(player.getUniqueId());
+                                data.remKey(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+                                inventory.open(player);
+                                updatingInventorys.remove(player.getUniqueId());
+                            }else{
+                                player.sendMessage("§cThere is no FileEditor for \"" + clickedFile.getName() + "\" registered.");
+                            }
+
+                        }));
+
+                        inventoryContents.set(3, 8, ClickableItem.of(new ItemBuilder(Skull.GARBAGE_CAN)
+                                .setDisplayname("§7Delete File")
+                                .setLore(new LineBuilder()
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Delete the current " + (clickedFile.isFile() ? "File" : "Directory"))
+                                        .addLine("§8§m-----").addLine("§7Current " + (clickedFile.isFile() ? "File" : "Directory") + "'s Name:", "§7")
+                                        .addLine("§8> §7" + clickedFile.getName(), "§7")).build(), inventoryClickEvent -> {
+                            // TODO: 26.05.2022 delete file 
+                            player.sendMessage(FileManager.getInstance().getImplementationError());
+                        }));
+                        
+                        inventoryContents.set(4, 8, ClickableItem.of(new ItemBuilder(Skull.MOVEMENT)
+                                .setDisplayname("§7Move to")
+                                .setLore(new LineBuilder()
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Move the current " + (clickedFile.isFile() ? "File" : "Directory") + " to an other directory", "§7")
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Current " + (clickedFile.isFile() ? "File" : "Directory") + "'s Name:", "§7")
+                                        .addLine("§8> §7" + clickedFile.getName(), "§7")).build(), inventoryClickEvent -> {
+                            // TODO: 26.05.2022 move file to other dir 
+                            player.sendMessage(FileManager.getInstance().getImplementationError());
+                        }));
 
                     }
                 })

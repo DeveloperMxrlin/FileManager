@@ -29,6 +29,8 @@ public class FileManagerCommand implements CommandExecutor {
 
         DirectoryInventory.getDirectoryInventory(new File("plugins")).open(player);
 
+        // TODO: 26.05.2022 open directory inventory with more args 
+
         return true;
     }
 }

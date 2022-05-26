@@ -130,7 +130,7 @@ public class YamlEditor implements FileEditor {
 
                             items.add(ClickableItem.of(item, inventoryClickEvent -> {
 
-                                // TODO: 19.05.2022 add entrywatcher 
+                                // TODO: 19.05.2022 add entrywatcher PRIORITY #?
 
                                 if(type == ObjectType.NOT_SUPPORTED) {
                                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
