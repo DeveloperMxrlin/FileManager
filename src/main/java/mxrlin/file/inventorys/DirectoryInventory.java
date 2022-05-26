@@ -29,8 +29,10 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.logging.Level;
 
 public class DirectoryInventory {
 
@@ -153,8 +155,51 @@ public class DirectoryInventory {
                             getDirectoryInventory(directory).open(player, pagination.previous().getPage());
                         }));
 
-                        inventoryContents.set(5, 5, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_RIGHT).setDisplayname("§7Next Page").build(), inventoryClickEvent -> {
+                        inventoryContents.set(5, 3, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_RIGHT).setDisplayname("§7Next Page").build(), inventoryClickEvent -> {
                             getDirectoryInventory(directory).open(player, pagination.next().getPage());
+                        }));
+
+                        inventoryContents.set(5, 5, ClickableItem.of(new ItemBuilder(Skull.LIME_PLUS).setDisplayname("§7Create File").build(), inventoryClickEvent -> {
+
+
+
+                            updatingInventorys.add(player.getUniqueId());
+                            player.closeInventory();
+                            updatingInventorys.remove(player.getUniqueId());
+                            new AnvilGUI.Builder()
+                                    .onClose(player1 -> {
+                                        if(!updatingInventorys.contains(player1.getUniqueId())){
+                                            player1.sendMessage("§cYou closed the inventory and the input won't be saved.");
+                                            player1.playSound(player1.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                                        }else updatingInventorys.remove(player1.getUniqueId());
+                                        Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getDirectoryInventory(directory).open(player1), 5);
+                                    })
+                                    .onComplete((player1, s) -> {
+
+                                        File file = new File(directory, s);
+
+                                        if(file.exists()) player1.sendMessage("§cThere is already a file existing with the name \"" + s + "\"!");
+                                        else{
+
+                                            try {
+                                                file.createNewFile();
+                                                player1.sendMessage("§7You successfully created a new File with the name \"" + file.getName() + "\"!");
+                                            } catch (IOException e) {
+                                                FileManager.getInstance().getLogger().log(Level.SEVERE, "While trying to create a file something wasn't working: " + e.getMessage());
+                                                player1.sendMessage("§cCouldn't create new file. Please try again later.");
+                                            }
+
+                                        }
+
+                                        updatingInventorys.add(player1.getUniqueId());
+                                        return AnvilGUI.Response.close();
+                                    })
+                                    .text(" ")
+                                    .title("§7Create the file")
+                                    .plugin(FileManager.getInstance())
+                                    .itemLeft(new ItemBuilder(Material.NAME_TAG).setDisplayname("§7File Name").build())
+                                    .open(player);
+
                         }));
 
                     }
@@ -187,6 +232,9 @@ public class DirectoryInventory {
                             }
 
                             data.remKey(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+                            updatingInventorys.add(player.getUniqueId());
+                            player.closeInventory();
+                            updatingInventorys.remove(player.getUniqueId());
                             new AnvilGUI.Builder()
                                     .onClose(player1 -> {
                                         if(!updatingInventorys.contains(player1.getUniqueId())){
@@ -272,8 +320,17 @@ public class DirectoryInventory {
                                         .addLine("§7Delete the current " + (clickedFile.isFile() ? "File" : "Directory"))
                                         .addLine("§8§m-----").addLine("§7Current " + (clickedFile.isFile() ? "File" : "Directory") + "'s Name:", "§7")
                                         .addLine("§8> §7" + clickedFile.getName(), "§7")).build(), inventoryClickEvent -> {
-                            // TODO: 26.05.2022 delete file 
-                            player.sendMessage(FileManager.getInstance().getImplementationError());
+                            if(!clickedFile.exists()){
+                                player.sendMessage("§cThe clicked file seems to be deleted already!");
+                                return;
+                            }
+
+                            data.remKey(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+                            boolean bool = clickedFile.delete();
+                            if(bool) player.sendMessage("§7You successfully deleted the file \""+clickedFile.getName()+"\"!");
+                            else player.sendMessage("§cCouldn't delete the file. Try again later.");
+
+                            updateInv(player, directory);
                         }));
                         
                         inventoryContents.set(4, 8, ClickableItem.of(new ItemBuilder(Skull.MOVEMENT)
@@ -296,11 +353,26 @@ public class DirectoryInventory {
 
                     File parentDirectory = directory.getParentFile();
 
-                    if(!updatingInventorys.contains(inventoryCloseEvent.getPlayer().getUniqueId()))
+                    if(!updatingInventorys.contains(inventoryCloseEvent.getPlayer().getUniqueId())){
                         Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getDirectoryInventory(parentDirectory).open((Player) inventoryCloseEvent.getPlayer()), 2);
+                        FileManager.getInstance().getPlayerData((Player) inventoryCloseEvent.getPlayer()).remKey(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+                    }
 
                 }))
                 .build();
+    }
+
+    private static void updateInv(Player player, File dir){
+
+        if(!dir.isDirectory()) return;
+
+        updatingInventorys.add(player.getUniqueId());
+        player.closeInventory();
+        FileManager.getInstance().getPlayerData(player).remKey(PlayerData.Prefixes.DIRECTORY_WATCHER + "selfile");
+        updatingInventorys.remove(player.getUniqueId());
+
+        getDirectoryInventory(dir).open(player);
+
     }
 
     private static Material getMaterialFile(File file){

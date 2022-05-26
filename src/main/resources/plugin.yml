@@ -1,6 +1,6 @@
 main: mxrlin.file.FileManager
 name: FileManager
-version: 1.2.0
+version: 1.2.1
 description: Manage all of your files ingame!
 api-version: 1.18
 author: Mxrlin
