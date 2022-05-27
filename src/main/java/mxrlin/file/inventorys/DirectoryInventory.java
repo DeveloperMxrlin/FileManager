@@ -13,6 +13,7 @@ import fr.minuskube.inv.content.InventoryProvider;
 import fr.minuskube.inv.content.Pagination;
 import fr.minuskube.inv.content.SlotIterator;
 import mxrlin.file.FileManager;
+import mxrlin.file.commands.FileManagerCommand;
 import mxrlin.file.inventorys.editor.EditorManager;
 import mxrlin.file.inventorys.editor.file.FileEditor;
 import mxrlin.file.misc.ObjectType;
@@ -349,7 +350,7 @@ public class DirectoryInventory {
                 })
                 .listener(new InventoryListener<>(InventoryCloseEvent.class, inventoryCloseEvent -> {
 
-                    if(directory.getName().equalsIgnoreCase("plugins")) return;
+                    if(FileManagerCommand.isStartingDir(directory)) return;
 
                     File parentDirectory = directory.getParentFile();
 

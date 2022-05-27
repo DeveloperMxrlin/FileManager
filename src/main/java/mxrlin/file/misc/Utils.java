@@ -66,4 +66,25 @@ public class Utils {
         return builder.toString();
     }
 
+    public static String stringArrToString(String[] arr){
+        return stringArrToString(arr, 0);
+    }
+
+    public static String stringArrToString(String[] arr, int start){
+        return stringArrToString(arr, start, arr.length);
+    }
+
+    public static String stringArrToString(String[] arr, int start, int end){
+        StringBuilder builder = new StringBuilder();
+
+        if(arr.length < end) end = arr.length;
+        for(int i = start; i < end; i++){
+            builder.append(arr[i]);
+            if(i != (end-1)){
+                builder.append(" ");
+            }
+        }
+        return builder.toString();
+    }
+
 }
