@@ -6,11 +6,15 @@
 package mxrlin.file.api;
 
 import fr.minuskube.inv.SmartInventory;
+import mxrlin.file.FileManager;
 import mxrlin.file.inventorys.DirectoryInventory;
 import mxrlin.file.inventorys.editor.EditorManager;
 import mxrlin.file.inventorys.editor.file.FileEditor;
+import mxrlin.file.misc.data.PlayerData;
+import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.util.UUID;
 
 public class FileManagerAPI {
 
@@ -35,6 +39,14 @@ public class FileManagerAPI {
             return getInventoryForFile(dir);
         }
         return DirectoryInventory.getDirectoryInventory(dir);
+    }
+
+    public PlayerData getDataOfPlayer(Player player){
+        return FileManager.getInstance().getPlayerData(player);
+    }
+
+    public PlayerData getDataOfUUID(UUID uuid){
+        return FileManager.getInstance().getPlayerData(uuid);
     }
 
 }

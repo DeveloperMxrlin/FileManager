@@ -41,7 +41,7 @@ public interface Search {
 
     Map<?, ?> getMapWithHighestPoints(Map<String, String> allMaps, File file, List<Entry> changedValues);
 
-    public class Entry {
+    class Entry {
 
         private String key;
         private Object value;
