@@ -49,8 +49,10 @@ Create own FileEditor by either implementing the FileEditor Interface or extendi
 FileEditorHelper Code Example:
 
 ```
-protected JsonTest() {
-        super("JSON", ".json");
+public class Test extends FileEditorHelper {
+
+    protected Test() {
+        super("json");
     }
 
     @Override
@@ -60,12 +62,21 @@ protected JsonTest() {
 
         return entriesToInventory(items.toArray(new ClickableItem[0]),
                 ClickableItem.empty(new ItemStack(Material.PAPER)), // add a information item that shows all information about the file
-                new EntryCreator(entry -> {
+                new EntryCreator((entry, player) -> {
                     // do something with the entry
                 }),
                 file,
                 "jsonTest:");
     }
+
+    @Override
+    protected Consumer<InventoryCloseEvent> closeInventory() {
+        return inventoryCloseEvent -> {
+            // do something on close
+            // f.e save the file, open new inventory...
+        };
+    }
+}
 ```
 
 And then you just have to add this into your enable part: `new JsonTest().addFileEditor();`
