@@ -44,12 +44,37 @@ For both methods you will have to add [JitPack](https://jitpack.io) to your repo
 
 After implemented, use the method `FileManagerAPI#INSTANCE` to get all available methods that are working for the API.
 
+Create own FileEditor by either implementing the FileEditor Interface or extending the FileEditorHelper Class.
+
+FileEditorHelper Code Example:
+
+```
+protected JsonTest() {
+        super("JSON", ".json");
+    }
+
+    @Override
+    protected InventoryProvider inventory(File file) {
+        List<ClickableItem> items = new ArrayList<>();
+        // add your items / entries of the file
+
+        return entriesToInventory(items.toArray(new ClickableItem[0]),
+                ClickableItem.empty(new ItemStack(Material.PAPER)), // add a information item that shows all information about the file
+                new EntryCreator(entry -> {
+                    // do something with the entry
+                }),
+                file,
+                "jsonTest:");
+    }
+```
+
+And then you just have to add this into your enable part: `new JsonTest().addFileEditor();`
+
 ## Statistics
 
-* 28 Different Files
-* 25 Different Classes
-* 5000 Lines of Code
-* 200 KB of Code
+* 30 Different Files with Code
+* 5300 Lines of Code
+* 230 KB of Code
 
 ## License
 This Repository uses a **MIT License**.
