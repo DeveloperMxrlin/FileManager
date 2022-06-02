@@ -256,24 +256,24 @@ public class YamlEditor implements FileEditor {
                                                 .setLore("§8§m-----", "§7Add a new Entry!")
                                         .build(),
                                 inventoryClickEvent -> {
-                                    EntryCreator creator = new EntryCreator(entry -> {
+                                    EntryCreator creator = new EntryCreator((entry, player1) -> {
 
                                         Bukkit.getScheduler().scheduleSyncDelayedTask(FileManager.getInstance(), () -> getInventory(file).open(player));
 
                                         if(entry.getKey().isEmpty() || entry.getValue() == null){
-                                            player.sendMessage("§7The Key or the Value is not set!");
-                                            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                                            player1.sendMessage("§7The Key or the Value is not set!");
+                                            player1.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                                             return;
                                         }
 
                                         if(yamlConfiguration.isSet(entry.getKey()) || data.changedValues.containsKey(entry.getKey())){
-                                            player.sendMessage("§7The key §c\"" + entry.getKey() + "\" §7is already set! Use the replace function instead of creating a new one!");
-                                            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
+                                            player1.sendMessage("§7The key §c\"" + entry.getKey() + "\" §7is already set! Use the replace function instead of creating a new one!");
+                                            player1.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                                             return;
                                         }
 
                                         data.changedValues.put(entry.getKey(), entry.getValue());
-                                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+                                        player1.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 
                                     });
 

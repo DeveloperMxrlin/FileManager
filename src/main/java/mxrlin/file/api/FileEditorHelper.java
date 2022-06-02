@@ -6,6 +6,7 @@
 package mxrlin.file.api;
 
 import fr.minuskube.inv.ClickableItem;
+import fr.minuskube.inv.InventoryListener;
 import fr.minuskube.inv.SmartInventory;
 import fr.minuskube.inv.content.InventoryContents;
 import fr.minuskube.inv.content.InventoryProvider;
@@ -24,28 +25,27 @@ import mxrlin.file.misc.item.Skull;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 
 import java.io.File;
+import java.util.function.Consumer;
 
 public abstract class FileEditorHelper {
 
-    private final String type;
     private final String ending;
 
-    protected FileEditorHelper(String type, String ending){
-
-        this.type = type;
+    protected FileEditorHelper(String ending){
         this.ending = ending;
-
     }
 
-    abstract InventoryProvider inventory(File file);
+    protected abstract InventoryProvider inventory(File file);
+    protected abstract Consumer<InventoryCloseEvent> closeInventory();
 
-    void addFileEditor(){
+    public void addFileEditor(){
         EditorManager.INSTANCE.addOwnFileEditor(ending, getEditor(null), true);
     }
 
-    InventoryProvider entriesToInventory(ClickableItem[] items, ClickableItem fileInformationItem, EntryCreator entryCreator, File file, String playerDataPrefix){
+    protected InventoryProvider entriesToInventory(ClickableItem[] items, ClickableItem fileInformationItem, EntryCreator entryCreator, File file, String playerDataPrefix){
         if(!playerDataPrefix.endsWith(":")) playerDataPrefix += ":";
         String finalPlayerDataPrefix = playerDataPrefix;
         return new InventoryProvider() {
@@ -224,7 +224,7 @@ public abstract class FileEditorHelper {
         };
     }
 
-    FileEditor getEditor(File file){
+    protected FileEditor getEditor(File file){
 
         String title = "";
         if(file != null){
@@ -233,21 +233,22 @@ public abstract class FileEditorHelper {
             title = DirectoryInventory.shortTitle(title);
         }
 
+        final String finalTitle = title;
+
         return new FileEditor() {
             @Override
             public SmartInventory getInventory(File file) {
                 return SmartInventory.builder()
                         .provider(inventory(file))
                         .manager(FileManager.getInstance().getManager())
-                        .title("")
+                        .title(finalTitle)
                         .size(6, 9)
+                        .listener(new InventoryListener<>(InventoryCloseEvent.class, inventoryCloseEvent -> {
+                            closeInventory().accept(inventoryCloseEvent);
+                        }))
                         .build();
             }
         };
-    }
-
-    public String getType() {
-        return type;
     }
 
     public String getEnding() {

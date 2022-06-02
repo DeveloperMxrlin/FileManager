@@ -28,16 +28,17 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class EntryCreator {
 
     private Entry currentEntry;
-    private Consumer<Entry> consumerOnClose;
+    private BiConsumer<Entry, Player> consumerOnClose;
 
     private final ClickableItem glass = ClickableItem.empty(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayname(" ").build());
 
-    public EntryCreator(Consumer<Entry> consumerOnClose) {
+    public EntryCreator(BiConsumer<Entry, Player> consumerOnClose) {
 
         this.consumerOnClose = consumerOnClose;
         this.currentEntry = new Entry("", null);
@@ -277,7 +278,7 @@ public class EntryCreator {
                             return;
                         }
 
-                        consumerOnClose.accept(currentEntry);
+                        consumerOnClose.accept(currentEntry, player);
                         data.remKey(PlayerData.Prefixes.ENTRY_CREATOR + "currentinvstate");
                     }
                 }))
