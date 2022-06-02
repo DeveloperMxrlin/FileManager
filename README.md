@@ -25,6 +25,11 @@ If you don't want to go to all your directories you can instantly open the file 
 * Join the [Discord](https://discord.gg/2ajfpDvn2b) for support, updates and news.
 * Download the plugin at the [SpigotMC Ressource](https://www.spigotmc.org/resources/filemanager.102079/).
 
+## Suggestions or Bugs?
+You found Bugs or you have something you would love to have in the plugin? 
+
+Go ahead and join our [Discord](https://discord.gg/2ajfpDvn2b) and tell us! We usually answer really fast and we appreciate every thought! 😄
+
 ## Libraries
 * [SmartInvs](https://www.spigotmc.org/resources/smartinvs-advanced-inventory-api.42835/ "Click to go to SmartInvs!")
 * [AnvilGUI](https://github.com/WesJD/AnvilGUI "Click to go to AnvilGUI!")
