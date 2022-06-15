@@ -5,6 +5,9 @@
 
 package mxrlin.file.inventorys.editor.file;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.*;
+import com.sun.scenario.effect.light.Light;
 import fr.minuskube.inv.ClickableItem;
 import fr.minuskube.inv.InventoryListener;
 import fr.minuskube.inv.SmartInventory;
@@ -22,6 +25,7 @@ import mxrlin.file.misc.data.PlayerData;
 import mxrlin.file.misc.item.ItemBuilder;
 import mxrlin.file.misc.item.LineBuilder;
 import mxrlin.file.misc.item.Skull;
+import mxrlin.file.search.JsonSearch;
 import mxrlin.file.search.Search;
 import mxrlin.file.search.YamlSearch;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -35,18 +39,25 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
 
-public class YamlEditor implements FileEditor {
+public class JsonEditor implements FileEditor {
 
-    private Map<File, SmartInventory> createdInventoryForFile;
+    // TODO: 02.06.2022 some files contain jsonarray other jsonobject, save jsonarray if file contains jsonarray 
 
-    public YamlEditor(){
-        createdInventoryForFile = new HashMap<>();
+    private static Map<File, SmartInventory> createdInventoryForFile;
+    private static Gson gson;
+
+    public JsonEditor(){
+        if(createdInventoryForFile == null) createdInventoryForFile = new HashMap<>();
+        if(gson == null) gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .create();
     }
 
     @Override
@@ -57,10 +68,11 @@ public class YamlEditor implements FileEditor {
         }
 
         String[] fileNameSplit = file.getName().split("\\.");
-        if(!fileNameSplit[fileNameSplit.length-1].equalsIgnoreCase("yml"))
+        if(!fileNameSplit[fileNameSplit.length-1].equalsIgnoreCase("json"))
             return null;
-        YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
-        Set<String> keys = yamlConfiguration.getKeys(true);
+
+        Map<String, Object> map = Utils.parseJsonFileToMap(file);
+        List<String> keys = new ArrayList<>(map.keySet());
 
         String title = "§8" + file.getPath();
         title = title.replace("\\", "§0/§8");
@@ -75,9 +87,9 @@ public class YamlEditor implements FileEditor {
                     public void init(Player player, InventoryContents inventoryContents) {
 
                         PlayerData data = FileManager.getInstance().getPlayerData(player);
-                        data.addDataIfKeyNotSet(PlayerData.Prefixes.YAML_EDITOR + "file", file);
-                        data.addDataIfKeyNotSet(PlayerData.Prefixes.YAML_EDITOR + "informationtype", PlayerData.InformationType.ALL);
-                        data.addDataIfKeyNotSet(PlayerData.Prefixes.YAML_EDITOR + "savetype", PlayerData.SaveType.SEARCH_RELOAD);
+                        data.addDataIfKeyNotSet(PlayerData.Prefixes.JSON_EDITOR + "file", file);
+                        data.addDataIfKeyNotSet(PlayerData.Prefixes.JSON_EDITOR + "informationtype", PlayerData.InformationType.ALL);
+                        data.addDataIfKeyNotSet(PlayerData.Prefixes.JSON_EDITOR + "savetype", PlayerData.SaveType.SEARCH_RELOAD);
 
                         ClickableItem glass = ClickableItem.empty(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayname(" ").build());
                         inventoryContents.fillColumn(7, glass);
@@ -89,35 +101,32 @@ public class YamlEditor implements FileEditor {
                         Pagination pagination = inventoryContents.pagination();
 
                         List<ClickableItem> items = new ArrayList<>();
+
                         for(String key : data.changedValues.keySet()){
                             if(!keys.contains(key)) keys.add(key);
                         }
 
                         for(String key : keys){
 
-                            Object val = yamlConfiguration.get(key);
-                            if(val instanceof ConfigurationSection) continue;
+                            Object val = map.get(key);
 
                             if(data.changedValues.containsKey(key)) val = data.changedValues.get(key);
 
                             ObjectType type = ObjectType.getType(val);
                             Object finalVal = val;
 
-                            PlayerData.InformationType informationType = data.getData(PlayerData.Prefixes.YAML_EDITOR + "informationtype");
+                            PlayerData.InformationType informationType = data.getData(PlayerData.Prefixes.JSON_EDITOR + "informationtype");
 
                             ItemStack item;
 
                             switch (informationType){
                                 case ALL:
-                                    List<String> comments = yamlConfiguration.getComments(key);
                                     item = new ItemBuilder(Skull.getCustomHead(type.getHeadId()))
                                             .setDisplayname("§7" + key)
                                             .setLore(new LineBuilder()
                                                     .addLine("§8§m-----")
                                                     .addLineIgnoringMaxLength("§8> §7Type: " + type.getDisplayName())
-                                                    .addLine("§8> §7Value: " + yamlConfiguration.get(key), "          §7")
-                                                    .addLine("§8> §7Comments: " + (comments.isEmpty() ? "None" : ""))
-                                                    .addListAsLine(comments, "  §8- §7", ""))
+                                                    .addLine("§8> §7Value: " + val, "          §7"))
                                             .build();
                                     break;
                                 case NOTHING:
@@ -197,63 +206,63 @@ public class YamlEditor implements FileEditor {
                                 .blacklist(1, 7).blacklist(1, 8)
                                 .blacklist(2, 7).blacklist(2, 8));
 
-                        PlayerData.InformationType type = data.getData(PlayerData.Prefixes.YAML_EDITOR + "informationtype");
+                        PlayerData.InformationType type = data.getData(PlayerData.Prefixes.JSON_EDITOR + "informationtype");
                         PlayerData.InformationType nextInfo = data.getNextInformationType(type);
 
                         inventoryContents.set(1, 8, ClickableItem.of(new ItemBuilder(Material.OAK_SIGN)
-                                        .setDisplayname("§7Change Information Type")
-                                        .setLore(new LineBuilder()
-                                                .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
-                                                .addLine("§8§m-----")
-                                            .addLine("§7Current: " + type)
-                                            .addLine(" §7-> " + type.getDescription())
-                                            .addLine("§8§m-----")
-                                            .addLine("§7Next: " + nextInfo)
-                                            .addLine(" §7-> " + nextInfo.getDescription()))
+                                .setDisplayname("§7Change Information Type")
+                                .setLore(new LineBuilder()
+                                        .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Current: " + type)
+                                        .addLine(" §7-> " + type.getDescription())
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Next: " + nextInfo)
+                                        .addLine(" §7-> " + nextInfo.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "informationtype", nextInfo);
+                            data.addData(PlayerData.Prefixes.JSON_EDITOR + "informationtype", nextInfo);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 
-                        PlayerData.SaveType saveType = data.getData(PlayerData.Prefixes.YAML_EDITOR + "savetype");
+                        PlayerData.SaveType saveType = data.getData(PlayerData.Prefixes.JSON_EDITOR + "savetype");
                         PlayerData.SaveType next = data.getNextSaveType(saveType);
 
                         inventoryContents.set(2, 8, ClickableItem.of(new ItemBuilder(Skull.STRUCTURE_BLOCK_SAVE)
-                                        .setDisplayname("§7Change Save Type")
-                                        .setLore(new LineBuilder()
-                                                .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
-                                                .addLine("§8§m-----")
-                                               .addLine("§7Current: " + saveType)
-                                               .addLine(" §7-> " + saveType.getDescription())
-                                               .addLine("§8§m-----")
-                                               .addLine("§7Next: " + next)
-                                               .addLine(" §7-> " + next.getDescription()))
+                                .setDisplayname("§7Change Save Type")
+                                .setLore(new LineBuilder()
+                                        .setStaticPrefix(Utils.textToSpaces(" -> ") + "§7")
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Current: " + saveType)
+                                        .addLine(" §7-> " + saveType.getDescription())
+                                        .addLine("§8§m-----")
+                                        .addLine("§7Next: " + next)
+                                        .addLine(" §7-> " + next.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "savetype", next);
+                            data.addData(PlayerData.Prefixes.JSON_EDITOR + "savetype", next);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 
-                        File currentFile = data.getData(PlayerData.Prefixes.YAML_EDITOR + "file");
+                        File currentFile = data.getData(PlayerData.Prefixes.JSON_EDITOR + "file");
                         SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
 
                         try {
                             inventoryContents.set(3, 8, ClickableItem.empty(new ItemBuilder(Skull.OAK_WOOD_QUESTION_MARK)
                                     .setDisplayname("§7File Information")
-                                                    .setLore(new LineBuilder()
-                                                            .addLine("§8§m-----")
-                                                            .addLine("§8> §7Last Edit: " + format.format(currentFile.lastModified()))
-                                                            .addLineIgnoringMaxLength("§8> §7Path: " + currentFile.getAbsolutePath())
-                                                            .addLine("§8> §7Type: Yaml")
-                                                            .addLine("§8> §7Keys: " + (keys.size()-1) + "x")
-                                                            .addLine("§8> §7Size: " + Utils.humanReadableByteCountSI(Files.size(file.toPath()))))
+                                    .setLore(new LineBuilder()
+                                            .addLine("§8§m-----")
+                                            .addLine("§8> §7Last Edit: " + format.format(currentFile.lastModified()))
+                                            .addLineIgnoringMaxLength("§8> §7Path: " + currentFile.getAbsolutePath())
+                                            .addLine("§8> §7Type: Yaml")
+                                            .addLine("§8> §7Keys: " + (keys.size()-1) + "x")
+                                            .addLine("§8> §7Size: " + Utils.humanReadableByteCountSI(Files.size(file.toPath()))))
                                     .build()));
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
 
                         inventoryContents.set(5, 8, ClickableItem.of(new ItemBuilder(Skull.LIME_PLUS)
-                                                .setDisplayname("§7Create an Entry")
-                                                .setLore("§8§m-----", "§7Add a new Entry!")
+                                        .setDisplayname("§7Create an Entry")
+                                        .setLore("§8§m-----", "§7Add a new Entry!")
                                         .build(),
                                 inventoryClickEvent -> {
                                     EntryCreator creator = new EntryCreator((entry, player1) -> {
@@ -266,7 +275,7 @@ public class YamlEditor implements FileEditor {
                                             return;
                                         }
 
-                                        if(yamlConfiguration.isSet(entry.getKey()) || data.changedValues.containsKey(entry.getKey())){
+                                        if(map.get(entry.getKey()) != null || data.changedValues.containsKey(entry.getKey())){
                                             player1.sendMessage("§7The key §c\"" + entry.getKey() + "\" §7is already set! Use the replace function instead of creating a new one!");
                                             player1.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1, 1);
                                             return;
@@ -281,7 +290,7 @@ public class YamlEditor implements FileEditor {
                                     player.closeInventory();
                                     DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
                                     creator.getInventory().open(player);
-                        }));
+                                }));
 
                         int pageCount = (int)Math.ceil((double)items.size() / (double)28);
 
@@ -291,7 +300,7 @@ public class YamlEditor implements FileEditor {
 
                         if(!pagination.isFirst()){
                             inventoryContents.set(5, 2, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_LEFT)
-                                            .setDisplayname("§7Previous Page")
+                                    .setDisplayname("§7Previous Page")
                                     .build(), inventoryClickEvent -> {
                                 DirectoryInventory.updatingInventorys.add(player.getUniqueId());
                                 getInventory(file).open(player, pagination.previous().getPage());
@@ -308,14 +317,14 @@ public class YamlEditor implements FileEditor {
 
                         if(!pagination.isLast()){
                             inventoryContents.set(5, 4, ClickableItem.of(new ItemBuilder(Skull.OAK_WOOD_ARROW_RIGHT)
-                                            .setDisplayname("§7Next Page")
+                                    .setDisplayname("§7Next Page")
                                     .build(), inventoryClickEvent -> {
                                 DirectoryInventory.updatingInventorys.add(player.getUniqueId());
                                 getInventory(file).open(player, pagination.next().getPage());
                                 DirectoryInventory.updatingInventorys.remove(player.getUniqueId());
                             }));
                             inventoryContents.set(5, 5, ClickableItem.of(new ItemBuilder(Skull.GOLDEN_ARROW_RIGHT)
-                                            .setDisplayname("§7Last Page")
+                                    .setDisplayname("§7Last Page")
                                     .build(), inventoryClickEvent -> {
                                 DirectoryInventory.updatingInventorys.add(player.getUniqueId());
                                 getInventory(file).open(player, pageCount-1);
@@ -324,7 +333,7 @@ public class YamlEditor implements FileEditor {
                         }
 
                         inventoryContents.set(5, 3, ClickableItem.empty(new ItemBuilder(Material.OAK_SIGN)
-                                        .setDisplayname("§7" + pagination.getPage() + "§8/§7" + (pageCount-1))
+                                .setDisplayname("§7" + pagination.getPage() + "§8/§7" + (pageCount-1))
                                 .build()));
 
                     }
@@ -340,7 +349,7 @@ public class YamlEditor implements FileEditor {
 
                         for(String key : keys){
 
-                            Object val = yamlConfiguration.get(key);
+                            Object val = map.get(key);
                             if(val instanceof ConfigurationSection) continue;
 
                             if(data.changedValues.containsKey(key)) val = data.changedValues.get(key);
@@ -348,21 +357,18 @@ public class YamlEditor implements FileEditor {
                             ObjectType type = ObjectType.getType(val);
                             Object finalVal = val;
 
-                            PlayerData.InformationType informationType = data.getData(PlayerData.Prefixes.YAML_EDITOR + "informationtype");
+                            PlayerData.InformationType informationType = data.getData(PlayerData.Prefixes.JSON_EDITOR + "informationtype");
 
                             ItemStack item;
 
                             switch (informationType){
                                 case ALL:
-                                    List<String> comments = yamlConfiguration.getComments(key);
                                     item = new ItemBuilder(Skull.getCustomHead(type.getHeadId()))
                                             .setDisplayname("§7" + key)
                                             .setLore(new LineBuilder()
                                                     .addLine("§8§m-----")
                                                     .addLineIgnoringMaxLength("§8> §7Type: " + type.getDisplayName())
-                                                    .addLine("§8> §7Value: " + yamlConfiguration.get(key), "          §7")
-                                                    .addLine("§8> §7Comments: " + (comments.isEmpty() ? "None" : ""))
-                                                    .addListAsLine(comments, "  §8- §7", ""))
+                                                    .addLine("§8> §7Value: " + val, "          §7"))
                                             .build();
                                     break;
                                 case NOTHING:
@@ -441,7 +447,7 @@ public class YamlEditor implements FileEditor {
                                 .blacklist(1, 7).blacklist(1, 8)
                                 .blacklist(2, 7).blacklist(2, 8));
 
-                        PlayerData.InformationType type = data.getData(PlayerData.Prefixes.YAML_EDITOR + "informationtype");
+                        PlayerData.InformationType type = data.getData(PlayerData.Prefixes.JSON_EDITOR + "informationtype");
                         PlayerData.InformationType nextInfo = data.getNextInformationType(type);
 
                         inventoryContents.set(1, 8, ClickableItem.of(new ItemBuilder(Material.OAK_SIGN)
@@ -455,11 +461,11 @@ public class YamlEditor implements FileEditor {
                                         .addLine("§7Next: " + nextInfo)
                                         .addLine(" §7-> " + nextInfo.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "informationtype", nextInfo);
+                            data.addData(PlayerData.Prefixes.JSON_EDITOR + "informationtype", nextInfo);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 
-                        PlayerData.SaveType saveType = data.getData(PlayerData.Prefixes.YAML_EDITOR + "savetype");
+                        PlayerData.SaveType saveType = data.getData(PlayerData.Prefixes.JSON_EDITOR + "savetype");
                         PlayerData.SaveType next = data.getNextSaveType(saveType);
 
                         inventoryContents.set(2, 8, ClickableItem.of(new ItemBuilder(Skull.STRUCTURE_BLOCK_SAVE)
@@ -473,7 +479,7 @@ public class YamlEditor implements FileEditor {
                                         .addLine("§7Next: " + next)
                                         .addLine(" §7-> " + next.getDescription()))
                                 .build(), inventoryClickEvent -> {
-                            data.addData(PlayerData.Prefixes.YAML_EDITOR + "savetype", next);
+                            data.addData(PlayerData.Prefixes.JSON_EDITOR + "savetype", next);
                             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1, 1);
                         }));
 
@@ -495,7 +501,7 @@ public class YamlEditor implements FileEditor {
                             boolean search = false;
                             boolean reload = false;
 
-                            PlayerData.SaveType type = data.getData(PlayerData.Prefixes.YAML_EDITOR + "savetype");
+                            PlayerData.SaveType type = data.getData(PlayerData.Prefixes.JSON_EDITOR + "savetype");
 
                             switch (type){
                                 case SEARCH_RELOAD:
@@ -517,7 +523,7 @@ public class YamlEditor implements FileEditor {
 
                         }
 
-                        data.remKey(PlayerData.Prefixes.YAML_EDITOR + "file");
+                        data.remKey(PlayerData.Prefixes.JSON_EDITOR + "file");
 
                     }
 
@@ -529,32 +535,32 @@ public class YamlEditor implements FileEditor {
         return inventory;
 
     }
-    
+
     private long save(Map<String, Object> changed, File file, boolean searchForMap, boolean reloadPlugin){
-        
+
         if(changed.isEmpty()) return -1L;
 
-        Timer timer = new Timer();
+        mxrlin.file.misc.Timer timer = new Timer();
         timer.start();
 
         FileManager.getInstance().debug("Initialization of Saving the File \"" + file.getAbsolutePath() + "\"");
         FileManager.getInstance().debug("Values: changed=" +changed + ",searchForMap=" + searchForMap + ",reloadPlugin=" + reloadPlugin);
-        
-        YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
+
+        Map<String, Object> mapJson = Utils.parseJsonFileToMap(file);
 
         List<Search.Entry> changedValues = new ArrayList<>();
         for(String key : changed.keySet()){
-            changedValues.add(new Search.Entry(key, changed.get(key), !yamlConfiguration.isSet(key)));
+            changedValues.add(new Search.Entry(key, changed.get(key), mapJson.get(key) == null));
         }
-        
+
         for(String key : changed.keySet()){
-            yamlConfiguration.set(key, changed.get(key));
+            mapJson.put(key, changed.get(key));
         }
 
         boolean saveSuccess = true;
-        
-        try {
-            yamlConfiguration.save(file);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))){
+            gson.toJson(mapJson, writer);
         } catch (IOException e) {
             saveSuccess = false;
             e.printStackTrace();
@@ -572,18 +578,18 @@ public class YamlEditor implements FileEditor {
                 FileManager.getInstance().debug("Failed to check if file is in the plugin Dir: " + e.getMessage());
             }
 
-            YamlSearch yamlSearch = new YamlSearch();
-            
+            JsonSearch jsonSearch = new JsonSearch();
+
             File pluginDir = null;
             File current = file;
-            
+
             while (pluginDir == null) {
                 if(current.getParentFile().getName().equals("plugins")){
                     pluginDir = current;
                 }else current = current.getParentFile();
             }
 
-            Plugin plugin = yamlSearch.getPluginOfDirectory(pluginDir);
+            Plugin plugin = jsonSearch.getPluginOfDirectory(pluginDir);
             if(plugin == null){
                 FileManager.getInstance().debug("Couldn't find Plugin of pluginDirectory \"" + pluginDir.getAbsolutePath() + "\"");
                 return timer.stopAndTime();
@@ -597,8 +603,8 @@ public class YamlEditor implements FileEditor {
 
                 try {
 
-                    Map<?, ?> map = yamlSearch.getMapWithHighestPoints(
-                            yamlSearch.getAllHashMaps(
+                    Map<?, ?> map = jsonSearch.getMapWithHighestPoints(
+                            jsonSearch.getAllHashMaps(
                                     plugin),
                             file,
                             changedValues);
@@ -626,7 +632,7 @@ public class YamlEditor implements FileEditor {
                 FileManager.getInstance().debug("Reloading the plugin...");
                 PluginUtil.reload(plugin);
             }
-            
+
         }
 
         return timer.stopAndTime();

@@ -80,6 +80,7 @@ public class PlayerData {
         public static final String DIRECTORY_WATCHER = "dir:";
         public static final String YAML_EDITOR = "yaml:";
         public static final String ENTRY_CREATOR = "entrycreator:";
+        public static final String JSON_EDITOR = "json:";
 
     }
 

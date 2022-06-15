@@ -25,11 +25,17 @@ import java.util.logging.Level;
 
 public class FileManager extends JavaPlugin {
 
-    // TODO: 19.05.2022 add more editor: json, txt, properties (MC-Server), worldwatcher PRIORITY #2
+    // TODO: 19.05.2022 add more editor: txt, properties (MC-Server), worldwatcher PRIORITY #2
     // TODO: 21.05.2022 change start directory to the server directory PRIORITY #2.1
+    // TODO: 02.06.2022 File -> FileEditor -> File PRIORITY #3
+    // TODO: 02.06.2022 Inventory -> File -> FileEditor PRIORITY #4
+    // TODO: 02.06.2022 Replace "move file to other dir" with "copy file data" and "paste file data" PRIORITY #2
 
     public static final int     SPIGOT_ID       = 102079;
     public static final String  RESOURCE_LINK   = "https://www.spigotmc.org/resources/filemanager.102079/";
+
+    public static File pluginDirectory;
+    public static File serverDirectory;
 
     private static FileManager instance;
 
@@ -51,6 +57,9 @@ public class FileManager extends JavaPlugin {
         getLogger().log(Level.INFO, "Booting FileManager up...");
 
         instance = this;
+
+        pluginDirectory = getDataFolder().getParentFile();
+        serverDirectory = new File(pluginDirectory.getAbsolutePath()).getParentFile();
 
         data = new HashMap<>();
 

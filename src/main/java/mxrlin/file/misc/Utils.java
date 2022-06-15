@@ -5,13 +5,21 @@
 
 package mxrlin.file.misc;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
+import mxrlin.file.FileManager;
 import org.bukkit.ChatColor;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Level;
 
 public class Utils {
 
@@ -85,6 +93,36 @@ public class Utils {
             }
         }
         return builder.toString();
+    }
+
+    public static boolean isSubDirectory(File base, File child)
+            throws IOException {
+        base = base.getCanonicalFile();
+        child = child.getCanonicalFile();
+
+        File parentFile = child;
+        while (parentFile != null) {
+            if (base.equals(parentFile)) {
+                return true;
+            }
+            parentFile = parentFile.getParentFile();
+        }
+        return false;
+    }
+
+    public static Map<String, Object> parseJsonFileToMap(File file){
+        Gson gson = new Gson();
+        try {
+            Map<String, Object>[] maps = gson.fromJson(Files.newBufferedReader(file.toPath()), new TypeToken<Map<String, Object>[]>(){}.getType());
+            Map<String, Object> map = new HashMap<>();
+            for(Map<String, Object> m : maps){
+                map.putAll(m);
+            }
+            return map;
+        } catch (IOException e) {
+            FileManager.getInstance().getLogger().log(Level.SEVERE, "Failed to get json Object from File \"" + file.getAbsolutePath() + "\": " + e.getMessage());
+        }
+        return null;
     }
 
 }

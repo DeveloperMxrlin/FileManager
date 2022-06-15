@@ -7,6 +7,7 @@ package mxrlin.file.inventorys.editor;
 
 import mxrlin.file.inventorys.editor.file.FileEditor;
 import mxrlin.file.inventorys.editor.file.JarEditor;
+import mxrlin.file.inventorys.editor.file.JsonEditor;
 import mxrlin.file.inventorys.editor.file.YamlEditor;
 
 import java.io.File;
@@ -26,6 +27,7 @@ public class EditorManager {
     private void loadEditorMap(){
         editorMap.put("yml", new YamlEditor());
         editorMap.put("jar", new JarEditor());
+        editorMap.put("json", new JsonEditor());
     }
 
     public FileEditor getEditorForFile(File file){

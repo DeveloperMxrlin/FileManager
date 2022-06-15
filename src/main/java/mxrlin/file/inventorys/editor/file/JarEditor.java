@@ -12,6 +12,7 @@ import fr.minuskube.inv.content.InventoryContents;
 import fr.minuskube.inv.content.InventoryProvider;
 import mxrlin.file.FileManager;
 import mxrlin.file.inventorys.DirectoryInventory;
+import mxrlin.file.misc.Utils;
 import mxrlin.file.misc.item.ItemBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -21,10 +22,19 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 
 import java.io.File;
+import java.io.IOException;
 
 public class JarEditor implements FileEditor {
     @Override
     public SmartInventory getInventory(File file) {
+
+        try {
+            if(!Utils.isSubDirectory(FileManager.pluginDirectory, file)){
+                return null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         String title = "§8" + file.getPath();
         title = title.replace("\\", "§0/§8");

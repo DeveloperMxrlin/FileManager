@@ -40,7 +40,7 @@ public class FileManagerCommand implements CommandExecutor {
         }
 
         if(args.length == 0){
-            DirectoryInventory.getDirectoryInventory(startingDir).open(player);
+            DirectoryInventory.getDirectoryInventory(FileManager.serverDirectory).open(player);
             return true;
         }
 

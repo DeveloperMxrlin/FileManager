@@ -162,8 +162,6 @@ public class DirectoryInventory {
 
                         inventoryContents.set(5, 5, ClickableItem.of(new ItemBuilder(Skull.LIME_PLUS).setDisplayname("§7Create File").build(), inventoryClickEvent -> {
 
-
-
                             updatingInventorys.add(player.getUniqueId());
                             player.closeInventory();
                             updatingInventorys.remove(player.getUniqueId());
