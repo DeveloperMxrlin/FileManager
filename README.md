@@ -12,9 +12,23 @@
 
 File Manager is a Spigot plugin, made for server owners, to not have the need to edit their files, by opening the file, editing, and then restarting the server. With FileManager this is done ingame! You can edit your entries all ingame, and the saving is done automatically! With your agreement the plugin even searches for the entries and replaces them in the working Plugin! No need to restart the server or anything.
 
+## Tutorial
+
+After downloading and restarting the server, the plugin should be working!
+
+You just have to have the permission "filemanager.use" and execute the command **/filemanager**! It's as easy as that, you are already in the GUI and can now edit your files!
+If you don't want to go to all your directories you can instantly open the file by adding arguments like that:
+* **Aim**: 		Open "\[serverDir]\\plugins\\FileManager\\config.yml"
+* **Execution**: 	/filemanager FileManager/config.yml
+
 ## Links
 * Join the [Discord](https://discord.gg/2ajfpDvn2b) for support, updates and news.
 * Download the plugin at the [SpigotMC Ressource](https://www.spigotmc.org/resources/filemanager.102079/).
+
+## Suggestions or Bugs?
+You found Bugs or you have something you would love to have in the plugin? 
+
+Go ahead and join our [Discord](https://discord.gg/2ajfpDvn2b) and tell us! We usually answer really fast and we appreciate every thought! 😄
 
 ## Libraries
 * [SmartInvs](https://www.spigotmc.org/resources/smartinvs-advanced-inventory-api.42835/ "Click to go to SmartInvs!")
@@ -49,8 +63,10 @@ Create own FileEditor by either implementing the FileEditor Interface or extendi
 FileEditorHelper Code Example:
 
 ```
-protected JsonTest() {
-        super("JSON", ".json");
+public class Test extends FileEditorHelper {
+
+    protected Test() {
+        super("json");
     }
 
     @Override
@@ -60,12 +76,21 @@ protected JsonTest() {
 
         return entriesToInventory(items.toArray(new ClickableItem[0]),
                 ClickableItem.empty(new ItemStack(Material.PAPER)), // add a information item that shows all information about the file
-                new EntryCreator(entry -> {
+                new EntryCreator((entry, player) -> {
                     // do something with the entry
                 }),
                 file,
                 "jsonTest:");
     }
+
+    @Override
+    protected Consumer<InventoryCloseEvent> closeInventory() {
+        return inventoryCloseEvent -> {
+            // do something on close
+            // f.e save the file, open new inventory...
+        };
+    }
+}
 ```
 
 And then you just have to add this into your enable part: `new JsonTest().addFileEditor();`
