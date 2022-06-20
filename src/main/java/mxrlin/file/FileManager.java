@@ -5,6 +5,10 @@
 
 package mxrlin.file;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import fr.minuskube.inv.InventoryManager;
 import mxrlin.file.commands.FileManagerCommand;
 import mxrlin.file.listener.PlayerDataListener;
@@ -20,6 +24,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -30,6 +36,7 @@ public class FileManager extends JavaPlugin {
     // TODO: 02.06.2022 File -> FileEditor -> File PRIORITY #3
     // TODO: 02.06.2022 Inventory -> File -> FileEditor PRIORITY #4
     // TODO: 02.06.2022 Replace "move file to other dir" with "copy file data" and "paste file data" PRIORITY #2
+    // TODO: 15.06.2022 description for update checker
 
     public static final int     SPIGOT_ID       = 102079;
     public static final String  RESOURCE_LINK   = "https://www.spigotmc.org/resources/filemanager.102079/";
@@ -54,8 +61,6 @@ public class FileManager extends JavaPlugin {
     @Override
     public void onEnable() {
 
-        getLogger().log(Level.INFO, "Booting FileManager up...");
-
         instance = this;
 
         pluginDirectory = getDataFolder().getParentFile();
@@ -63,37 +68,23 @@ public class FileManager extends JavaPlugin {
 
         data = new HashMap<>();
 
-        getLogger().log(Level.INFO, "Loading Config...");
-
         loadConfig();
 
-        getLogger().log(Level.INFO, "Checking for Updates...");
-        getLogger().log(Level.INFO, "UpdateChecker Response:");
+        getLogger().log(Level.INFO, "Trying to check for updates...");
 
         checkUpdate();
-
-        getLogger().log(Level.INFO, "========");
-        getLogger().log(Level.INFO, "Initializing InventoryManager...");
 
         manager = new InventoryManager(this);
         manager.init();
 
-        getLogger().log(Level.INFO, "Initializing Implementation Error Messages...");
-
         implementationErrorMessages = new ArrayList<>();
         getImplementationError();
 
-        getLogger().log(Level.INFO, "Initializing bStats Metrics for the plugin...");
-
         metrics = new Metrics(this, 15053);
-
-        getLogger().log(Level.INFO, "Adding Commands and Listeners...");
 
         Bukkit.getPluginManager().registerEvents(new PlayerDataListener(), this);
 
         getCommand("filemanager").setExecutor(new FileManagerCommand());
-
-        getLogger().log(Level.INFO, "FileManager successfully booted up!");
 
     }
 
@@ -142,14 +133,25 @@ public class FileManager extends JavaPlugin {
     private void checkUpdate(){
 
         if(checkUpdate){
+
             UpdateCheck check = new UpdateCheck(this, SPIGOT_ID);
+            check.requestUpdateCheck();
+            getLogger().log(Level.INFO, "Current: " + getDescription().getVersion() + " - Latest: " + check.getLatestVersion());
 
             if(check.isUpdateAvailable()){
+
+                getLogger().log(Level.INFO, "There is a new update available!");
+
+                String title = getLatestUpdateTitle();
+                getLogger().log(Level.INFO, "Update Title: \"" + title + "\"");
 
                 if(downloadUpdate){
 
                     File dest = new File(getDataFolder() + "/Plugin");
                     Downloader downloader = new Downloader(this, SPIGOT_ID, dest);
+
+                    getLogger().log(Level.INFO, "Trying to download the plugin into " + dest.getAbsolutePath());
+
                     try {
                         downloader.download();
                         getLogger().log(Level.INFO, "Successfully downloaded the latest version of the plugin in " + dest.getAbsolutePath());
@@ -159,7 +161,6 @@ public class FileManager extends JavaPlugin {
 
                 }else{
 
-                    getLogger().log(Level.INFO, "A new Update is available for the Plugin!");
                     getLogger().log(Level.INFO, "Download it now here: " + RESOURCE_LINK);
 
                 }
@@ -176,6 +177,34 @@ public class FileManager extends JavaPlugin {
 
         }
 
+    }
+
+    private String getLatestUpdateTitle(){
+        StringBuilder json = new StringBuilder();
+
+        try {
+            URL url = new URL("https://api.spiget.org/v2/resources/102079/updates");
+            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.connect();
+            if(conn.getResponseCode() == 200) {
+                Scanner scan = new Scanner(url.openStream());
+                while(scan.hasNext()) {
+                    String temp = scan.nextLine();
+                    json.append(temp);
+                }
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+
+        Gson gson = new Gson();
+        JsonArray array = gson.fromJson(json.toString(), JsonArray.class);
+
+        JsonObject latestUpdate = (JsonObject) array.get(array.size()-1);
+        JsonElement title = latestUpdate.get("title");
+
+        return title.getAsString();
     }
 
     @Override
